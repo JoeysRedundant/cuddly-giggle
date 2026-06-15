@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Secrets / keys
+.audit-key
+.env
+*.env
+
+# Local Claude Code state
+.claude/
+
+# Logs / audit data
+audit.jsonl
+*.log
+
+# OS / WSL junk
+*:Zone.Identifier
+.DS_Store
+Thumbs.db

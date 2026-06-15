@@ -1,0 +1,13 @@
+{
+  "firm_name": "Sunshine Injury Law",
+  "attorney_calendar_id": "intake@sunshineinjurylaw.com",
+  "twilio_from_number": "+18135550142",
+  "timezone": "America/New_York",
+  "business_hours": "Mon–Fri 09:00–17:00",
+  "consult_duration_minutes": 30,
+  "practice_areas": "auto accidents, slip & fall, workers' comp, medical malpractice",
+  "qualifying_criteria": "incident recent / within statute of limitations; received medical treatment; clear at-fault other party; not already represented by another attorney; insurance available",
+  "log_sheet_id": "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789SAMPLE",
+  "reschedule_link": "https://sunshineinjurylaw.com/reschedule",
+  "claude_model": "claude-haiku-4-5-20251001"
+}
