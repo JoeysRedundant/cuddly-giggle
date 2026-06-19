@@ -1,0 +1,325 @@
+{
+  "name": "PI Inbound WhatsApp Bot — Sunshine Injury Law",
+  "nodes": [
+    {
+      "id": "i01-webhook",
+      "name": "Inbound Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        180,
+        320
+      ],
+      "webhookId": "pi-inbound-webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pi-inbound",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "Code: Parse Inbound",
+      "name": "Code: Parse Inbound",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        320
+      ],
+      "parameters": {
+        "jsCode": "const b = $json.body || {};\n// Key on DIGITS ONLY (no '+'); this is the in-memory session key. The main funnel re-heals to E.164.\nconst phone = (b.From || b.from || '').toString().replace('whatsapp:', '').replace(/\\D/g, '');\nconst text = (b.Body || b.body || '').toString().trim();\nconst name = (b.ProfileName || b.profileName || '').toString().trim();\n// Twilio's per-message id — used to dedupe its retry-on-slow-response (avoids a divergent 2nd reply).\nconst sid = (b.MessageSid || b.SmsMessageSid || b.SmsSid || '').toString().trim();\nreturn [{ json: { phone: phone, text: text, name: name, sid: sid } }];\n"
+      }
+    },
+    {
+      "id": "Code: Decide",
+      "name": "Code: Decide",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        580,
+        320
+      ],
+      "parameters": {
+        "jsCode": "const inb = $('Code: Parse Inbound').item.json;\nconst key = String(inb.phone || '').replace(/\\D/g, '');\n// Live conversation state lives IN MEMORY (workflow static data), keyed by phone digits.\n// Read key === write key, so there are no duplicate rows and no Google-Sheets type coercion.\nconst store = $getWorkflowStaticData('global');\nstore.sessions = store.sessions || {};\nconst sess = store.sessions[key] || null;\n\n// Idempotency: Twilio retries the same inbound (same MessageSid) when we answer slowly.\n// If we already handled this exact message, replay the SAME reply instead of re-processing\n// it into a divergent second message.\nif (sess && inb.sid && sess.lastSid && sess.lastSid === inb.sid) {\n  return [{ json: { phone: key, mode: 'dedup', dedup_twiml: sess.lastTwiml || '<Response></Response>' } }];\n}\n\nconst stage = sess ? String(sess.stage || 'collecting') : 'new';\nconst name = (sess && sess.name) || inb.name || '';\nconst email = (sess && sess.email) || '';\nconst offered = (sess && Array.isArray(sess.offered)) ? sess.offered : [];\n\nlet mode = 'qualify', accumulated = '', chosen_slot = '', reprompt = '';\nif (stage === 'awaiting_slot') {\n  accumulated = (sess && sess.case) || '';\n  const m = (inb.text || '').match(/\\d+/);\n  const idx = m ? parseInt(m[0], 10) : NaN;\n  if (!isNaN(idx) && idx >= 1 && idx <= offered.length) {\n    mode = 'book';\n    chosen_slot = offered[idx - 1].iso;\n  } else {\n    mode = 'reprompt';\n    reprompt = \"Please reply with the number of your preferred time (e.g. 2).\";\n  }\n} else {\n  mode = 'qualify';\n  accumulated = (((sess && sess.case) ? sess.case + ' ' : '') + (inb.text || '')).trim();\n}\n\nreturn [{ json: { phone: key, name: name, email: email, sid: inb.sid || '', stage: stage, mode: mode, accumulated: accumulated, chosen_slot: chosen_slot, reprompt: reprompt, offered: JSON.stringify(offered) } }];\n"
+      }
+    },
+    {
+      "id": "i05-if-skip",
+      "name": "If: Skip HTTP?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        780,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0",
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "reprompt",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "dedup",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "i06-if-book",
+      "name": "If: Book Mode?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        980,
+        420
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "book",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "HTTP: Call Book",
+      "name": "HTTP: Call Book",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        360
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://josesn8n.win/webhook/pi-intake",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ action:'book', silent:true, phone: $('Code: Decide').item.json.phone, name: $('Code: Decide').item.json.name, email: $('Code: Decide').item.json.email, chosen_slot: $('Code: Decide').item.json.chosen_slot }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "HTTP: Call Qualify",
+      "name": "HTTP: Call Qualify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        520
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://josesn8n.win/webhook/pi-intake",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ action:'qualify', silent:true, phone: $('Code: Decide').item.json.phone, name: $('Code: Decide').item.json.name, email: $('Code: Decide').item.json.email, case_description: $('Code: Decide').item.json.accumulated, preferred_date: '' }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "Code: Compose Reply",
+      "name": "Code: Compose Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        360
+      ],
+      "parameters": {
+        "jsCode": "const d = $('Code: Decide').item.json;\nconst mode = d.mode;\n\n// Twilio retry of an already-handled message: echo the exact prior reply, change nothing.\nif (mode === 'dedup') {\n  return [{ json: { twiml: d.dedup_twiml || '<Response></Response>' } }];\n}\n\nconst r = (mode === 'reprompt') ? {} : ($json || {});\nlet reply = '', stage = d.stage || 'collecting', offered = [];\ntry { offered = d.offered ? JSON.parse(d.offered) : []; } catch (e) { offered = []; }\n\nif (mode === 'reprompt') {\n  reply = d.reprompt || \"Please reply with the number of your preferred time (e.g. 2).\";\n  stage = 'awaiting_slot';\n} else if (mode === 'book') {\n  if (r.booked === true) {\n    reply = \"Booked! Your free consult is set for \" + (r.consult_slot || 'your selected time') + \". See you then!\";\n    stage = 'done';\n    offered = [];\n  } else {\n    offered = offered.filter(s => s.iso !== d.chosen_slot);\n    if (offered.length) {\n      const lines = offered.map((s, i) => (i + 1) + ') ' + s.label).join('\\n');\n      reply = \"Sorry — that time was just taken. Other openings:\\n\" + lines + \"\\nReply 1, 2, or 3.\";\n      stage = 'awaiting_slot';\n    } else {\n      reply = \"Sorry — that time was just taken. Reply with anything and I'll pull fresh times.\";\n      stage = 'collecting';\n    }\n  }\n} else { // qualify\n  const verdict = r.verdict || (r.qualified === true ? 'qualified' : 'needs_info');\n  if (verdict === 'qualified') {\n    offered = (r.slots || []).slice(0, 3);\n    if (offered.length) {\n      const lines = offered.map((s, i) => (i + 1) + ') ' + s.label).join('\\n');\n      reply = \"Good news — you look like a fit! Open consult times:\\n\" + lines + \"\\nReply 1, 2, or 3 to book.\";\n      stage = 'awaiting_slot';\n    } else {\n      reply = r.sms_reply || \"Good news — you're a fit! Our team will reach out with available times.\";\n      stage = 'done';\n    }\n  } else if (verdict === 'declined') {\n    reply = r.sms_reply || \"Thanks for reaching out — this isn't something our team can take on.\";\n    stage = 'done';\n  } else {\n    reply = r.sms_reply || \"Could you tell us a bit more about what happened?\";\n    stage = 'collecting';\n  }\n}\nconst esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst twiml = \"<Response><Message>\" + esc(reply) + \"</Message></Response>\";\n\n// Persist the updated session in memory (workflow static data). Same key we read with — no\n// duplicate rows, no Sheets coercion, no per-turn Sheets round-trip. lastSid/lastTwiml power dedup.\nconst store = $getWorkflowStaticData('global');\nstore.sessions = store.sessions || {};\nstore.sessions[d.phone] = {\n  name: d.name, email: d.email, case: d.accumulated, stage: stage,\n  offered: offered, lastSid: d.sid || '', lastTwiml: twiml,\n  updatedAt: new Date().toISOString()\n};\n\nreturn [{ json: { twiml: twiml } }];\n"
+      }
+    },
+    {
+      "id": "Respond: Reply",
+      "name": "Respond: Reply",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1660,
+        360
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $('Code: Compose Reply').item.json.twiml }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "content-type",
+                "value": "text/xml"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "i14-note",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        60
+      ],
+      "parameters": {
+        "content": "## Inbound WhatsApp Bot (v3.1)\nTwo-way chat over WhatsApp.\n1. Point Twilio Sandbox 'When a message comes in' → POST this workflow's /webhook/pi-inbound.\n2. Conversation state is kept IN MEMORY (n8n workflow static data, keyed by phone digits) — NO Google Sheet and NO credentials needed on this workflow.\n3. Reuses the main funnel at https://josesn8n.win/webhook/pi-intake (silent:true) for qualify/book — single-sourced compliance + booking.\n4. Replies via TwiML. ACTIVATE the workflow — static data only persists for active (production) runs, not manual test executions.",
+        "height": 280,
+        "width": 540
+      }
+    }
+  ],
+  "connections": {
+    "Inbound Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code: Parse Inbound",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Parse Inbound": {
+      "main": [
+        [
+          {
+            "node": "Code: Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Decide": {
+      "main": [
+        [
+          {
+            "node": "If: Skip HTTP?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Skip HTTP?": {
+      "main": [
+        [
+          {
+            "node": "Code: Compose Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If: Book Mode?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Book Mode?": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Call Book",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP: Call Qualify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Call Book": {
+      "main": [
+        [
+          {
+            "node": "Code: Compose Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Call Qualify": {
+      "main": [
+        [
+          {
+            "node": "Code: Compose Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Compose Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond: Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templatecredsSetupCompleted": false,
+    "instanceId": "pi-intake-funnel-builder"
+  },
+  "tags": []
+}

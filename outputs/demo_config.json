@@ -1,0 +1,17 @@
+{
+  "firm_name": "Sunshine Injury Law",
+  "attorney_calendar_id": "josemor1669@gmail.com",
+  "twilio_from_number": "+14155238886",
+  "messaging_channel": "whatsapp",
+  "timezone": "America/New_York",
+  "business_hours": "Mon–Fri 09:00–17:00",
+  "consult_duration_minutes": 30,
+  "practice_areas": "auto accidents, slip & fall / premises, workers' comp, medical malpractice",
+  "qualifying_criteria": "incident recent / within statute of limitations; the person was injured and received medical treatment; a clear at-fault other party; not already represented by another attorney; insurance available",
+  "log_sheet_id": "REPLACE_WITH_YOUR_SHEET_ID",
+  "reschedule_link": "https://sunshineinjurylaw.com/reschedule",
+  "cors_origins": "*",
+  "default_dial_code": "1",
+  "claude_model": "claude-haiku-4-5-20251001",
+  "n8n_base_url": "https://josesn8n.win"
+}
