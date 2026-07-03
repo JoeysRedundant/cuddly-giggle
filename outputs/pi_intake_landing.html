@@ -164,6 +164,15 @@
   .result .sms .tag{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:.45rem}
   .result .again{margin-top:1.4rem;background:none;border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:.7rem 1rem;font-family:inherit;font-weight:600;cursor:pointer;font-size:.88rem;width:100%}
   .result .again:hover{background:var(--cream-2)}
+  /* continue-on-WhatsApp CTA */
+  .wa-continue{display:none;align-items:center;justify-content:center;gap:.55rem;margin-top:1.2rem;width:100%;
+    background:#25D366;color:#06321b;border:none;border-radius:6px;padding:.85rem 1rem;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:.95rem;text-decoration:none;cursor:pointer;
+    box-shadow:0 12px 26px -16px rgba(37,211,102,.9);transition:transform .15s,filter .2s}
+  .wa-continue.show{display:flex}
+  .wa-continue:hover{filter:brightness(1.04)}
+  .wa-continue:active{transform:translateY(1px)}
+  .wa-continue svg{width:18px;height:18px;flex:none}
   .err{display:none;margin-top:1rem;padding:.8rem 1rem;background:#fbe9e7;border:1px solid #f0c4bd;border-radius:4px;color:#9a3328;font-size:.85rem;line-height:1.5}
   .err.show{display:block}
 
@@ -271,6 +280,10 @@
         <p class="sub" id="slotsBody"></p>
         <div class="slot-note" id="slotNote" style="display:none"></div>
         <div class="slot-grid" id="slotGrid"></div>
+        <a class="wa-continue" id="waSlots" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.978-1.197zm5.392-15.62z"/></svg>
+          Prefer to text? Continue on WhatsApp
+        </a>
         <div class="err" id="bookErr"></div>
       </div>
 
@@ -281,6 +294,10 @@
         <p class="sub" id="resBody"></p>
         <div class="slot" id="resSlot" style="display:none"></div>
         <div class="sms" id="resSms"><span class="tag">📱 Text sent to your phone</span><span id="smsText"></span></div>
+        <a class="wa-continue" id="waResult" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.978-1.197zm5.392-15.62z"/></svg>
+          Continue on WhatsApp
+        </a>
         <button class="again" id="againBtn">Submit another lead</button>
       </div>
 
@@ -294,6 +311,17 @@
   const WEBHOOK_URL = "https://josesn8n.win/webhook/pi-intake";
   // For test mode instead, use:  https://josesn8n.win/webhook-test/pi-intake
   //   and click "Execute workflow" in n8n before each submit.
+
+  // Twilio WhatsApp sandbox / firm WhatsApp sender (digits only). The conversation continues
+  // here: the funnel already seeded the bot with this lead's intake form, so the bot's first
+  // reply is personalized. (Twilio SANDBOX: the lead must first send the join code to this number.)
+  const WHATSAPP_NUMBER = "17372583742";
+  function waLink(firstName){
+    const hi = firstName ? ("Hi, this is " + firstName + " — ") : "Hi — ";
+    const msg = hi + "I just submitted my case review and want to finish booking my consult.";
+    return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(msg);
+  }
+  function firstNameOf(lead){ return ((lead && lead.name) || "").trim().split(/\s+/)[0] || ""; }
 
   const form    = document.getElementById('leadForm');
   const btn      = document.getElementById('submitBtn');
@@ -355,6 +383,9 @@
     const res = await fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      // SMS mode: the funnel business-initiates the first text itself (no silent flag), so the lead
+      // is contacted the moment they submit. Replies flow to the bot webhook (point the SMS number's
+      // inbound webhook at /webhook/pi-inbound).
       body: JSON.stringify(payload)
     });
     let data = {};
@@ -400,6 +431,13 @@
 
     document.getElementById('smsText').textContent = sms;
 
+    // Offer to continue the (now personalized) conversation on WhatsApp — except when declined.
+    const waR = document.getElementById('waResult');
+    if (waR){
+      waR.href = waLink(firstNameOf(lastLead));
+      waR.classList.toggle('show', verdict !== 'declined');
+    }
+
     formLive.classList.add('hide');
     resultBox.classList.add('show');
   }
@@ -424,6 +462,9 @@
       b.addEventListener('click', () => bookSlot(s.iso));
       slotGrid.appendChild(b);
     });
+    const waS = document.getElementById('waSlots');
+    if (waS){ waS.href = waLink(firstNameOf(lastLead)); waS.classList.add('show'); }
+
     formLive.classList.add('hide');
     resetBtn();
     slotsView.classList.add('show');
@@ -516,6 +557,7 @@
     resultBox.classList.remove('show');
     slotsView.classList.remove('show');
     bookErr.classList.remove('show');
+    document.querySelectorAll('.wa-continue').forEach(el => el.classList.remove('show'));
     slotNote.style.display = 'none';
     formLive.classList.remove('hide');
     form.reset();

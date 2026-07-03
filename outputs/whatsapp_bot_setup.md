@@ -1,77 +1,101 @@
-# WhatsApp Two-Way Bot — Setup (v3.1)
+# WhatsApp Intake Bot — Setup (v4.3 · AI Agent + form bridge)
 
-This adds a real back-and-forth WhatsApp assistant on top of the funnel. A lead can text replies;
-the bot re-qualifies as they add detail, then offers open times by text ("reply 1, 2, or 3") and
+The WhatsApp bot is a **single, self-contained n8n workflow** built on the LangChain **AI Agent** —
+a real conversational chatbot with memory. A lead fills the website form, then continues the
+conversation over WhatsApp: the bot already knows their name and what happened (handed off from the
+form), so its **first reply is personalized**, it offers open times **conversationally**, and it
 books the one they pick — all inside WhatsApp.
 
-**v3.1 change:** the bot now keeps its conversation memory **in n8n itself** (workflow static data,
-keyed by phone), not in a Google Sheet. That removes the whole class of "it forgot what I said /
-it re-asked / it replied twice" bugs, and it means **the bot needs no Google Sheet and no
-credentials at all.**
+## What v4.3 adds (the form bridge)
+The website funnel and the WhatsApp bot used to be completely independent — the bot started cold and
+re-asked everything. Now:
+1. **Form → bot handoff (seed).** When a lead submits the website form, the funnel POSTs the intake
+   context (`name`, `case_description`, `preferred_date`, keyed by `phone`) to the bot at
+   `/webhook/pi-inbound` as a `seed` call. The bot stashes it in workflow static data.
+2. **Personalized first reply.** When the lead texts, the bot greets them by the **name they typed**,
+   acknowledges their **actual incident**, and asks only the next **missing** detail — it never
+   re-asks anything the form already captured.
+3. **Conversational booking.** No more "reply 1, 2, or 3." The bot offers real times in plain
+   language ("I have Tuesday at 10 or 1:30, or Wednesday at 9 — what works?") and accepts natural
+   replies ("the 1:30 one", "Tuesday afternoon").
+4. **Change the day / future dates.** Times span multiple days, and a `preferred_date` from the form
+   (a day further out than today) is honored — the bot offers **that day's** openings, not just
+   today's. The lead can ask for a different day anytime.
+
+Booking stays **deterministic** (re-check the slot, then create the event) so it never double-books.
 
 ## What gets imported
-- **`pi_intake_funnel_workflow.json`** — the main funnel (re-import; has the `silent` flag so the bot
-  can drive it without the funnel double-texting).
-- **`pi_inbound_bot_workflow.json`** — the inbound bot. It listens on `/webhook/pi-inbound` and calls
-  the main funnel internally for all the qualify/booking logic (so the compliance prompt and booking
-  live in exactly one place).
+- **`pi_inbound_bot_workflow.json`** — the WhatsApp bot. Listens on `/webhook/pi-inbound`.
+  Credentials: **Anthropic** (chat model) + **Google Calendar** (availability + booking).
+  **No Twilio node, no Google Sheet.**
+- **`pi_intake_funnel_workflow.json`** — the landing-page funnel (`/webhook/pi-intake`). It qualifies
+  the lead, returns the web verdict, and **seeds the bot** via `HTTP: Seed Bot Context`. Re-import it
+  (it now contains that seed node).
+- **`pi_intake_landing.html`** — the landing page. It posts `silent: true` (so the funnel does not
+  send its own texts — the bot owns the WhatsApp conversation) and shows a **"Continue on WhatsApp"**
+  button after submit.
 
 ## One-time setup
 
-**1. Import both workflows.** Re-import the main funnel (replaces the old one — deactivate/delete the
-old first; same `/webhook/pi-intake` path). Import the inbound bot.
+**1. Import both workflows FRESH.** In n8n: *Workflows → Import from File*.
+   - ⚠️ **Delete/deactivate any older versions first** (one workflow per webhook path:
+     `/pi-intake` and `/pi-inbound`).
+   - ⚠️ **Do NOT merge onto another workflow's canvas** — import each as its own workflow so the
+     `$('Node Name')` references stay intact.
 
 **2. Wire credentials.**
-- Main funnel: Anthropic, Twilio, Google Calendar, Google Sheets (as before).
-- Inbound bot: **none.** It replies via TwiML (no Twilio node), keeps state in memory (no Sheets), and
-  calls the main webhook with no auth.
+   - **Funnel:** Anthropic (`HTTP: Claude Qualify`, `x-api-key`) + Google Calendar. There are **no
+     Twilio nodes** (WhatsApp is lead-initiated and owned by the bot — a funnel-initiated WhatsApp
+     text fails with Twilio 21654 "ContentSid Required") and **no Google Sheets** node (logging is
+     off until you put a real id in `log_sheet_id`). The `HTTP: Seed Bot Context` node needs **no
+     credential** (the bot webhook is open).
+   - **Bot:** Anthropic Chat Model + Google Calendar (the 3 calendar nodes). Nothing else.
 
-**3. Activate BOTH workflows.** They use different webhook paths (`/pi-intake` and `/pi-inbound`), so
-there's no conflict. **The bot must be Active** — n8n only persists workflow static data for active
-(production) runs, *not* for manual "Execute workflow" test runs. (So don't test the bot with the
-canvas "Execute" button; just text it once it's active.)
+**3. Activate BOTH workflows.** ⚠️ The bot must be **Active**, not run via the canvas "Execute"
+   button — n8n only persists static data (the seeded form context **and** the agent memory) for
+   **active production** runs. Same for the funnel's seed to land.
 
 **4. Point Twilio at the bot.** Twilio Console → **Messaging → Try it out → Send a WhatsApp message →
-Sandbox settings** → **"When a message comes in"** = `https://josesn8n.win/webhook/pi-inbound`,
-method **POST** → Save.
-*(This is exactly what the "Configure your WhatsApp Sandbox's Inbound URL to change this message"
-echo was telling you to do.)*
+   Sandbox settings** → **"When a message comes in"** = `https://josesn8n.win/webhook/pi-inbound`,
+   method **POST** → Save.
 
-## Test it
-1. Text the sandbox number a thin case ("I slipped and fell at a store").
-2. The bot asks the next missing detail. Reply ("last week, hurt my ankle, saw a doctor") → it asks
-   the next item and **remembers** everything you've said so far (no restart, no re-asking).
-3. Keep replying until you qualify → the bot texts a numbered list of open consult times.
-4. Reply **"2"** → it books that exact slot on the calendar and texts **"Booked …"**.
+**5. Confirm the funnel's base URL.** The seed node posts to `https://josesn8n.win/webhook/pi-inbound`
+   (from `n8n_base_url` in `demo_config.json`). If your n8n host changes, update the config and rebuild.
 
-## Notes
-- **Conversation state is in-memory**, keyed by phone digits. To restart a chat for testing, you can
-  add a `RESET` command (ask me to add it), or temporarily deactivate→reactivate the workflow to clear
-  all in-memory sessions.
-- The bot replies inside the same WhatsApp thread (TwiML), so the 24-hour sandbox window applies — if
-  it's been >24h, text `hi` to `+14155238886` first.
-- A **Twilio retry** (it re-POSTs an inbound if your reply is slow) is de-duplicated by `MessageSid`:
-  the bot replays the exact same reply instead of processing the message twice — so you never get two
-  divergent answers to one text.
-- If a slot is taken between the offer and the reply, the bot says so and re-offers fresh times — no
-  double-booking.
-- If your n8n host/URL ever changes, rebuild with the new `n8n_base_url` so the bot's internal call
-  still points at the main funnel.
+## Test it (the full demo path)
+1. Open `pi_intake_landing.html`, fill it with **your own** WhatsApp number, describe a real PI case
+   (e.g. "rear-ended last week, neck pain, saw a doctor, other driver insured, no lawyer yet"), pick a
+   preferred date a few days out, and submit. The funnel qualifies you **and seeds the bot**.
+2. Tap **"Continue on WhatsApp"** (or text the sandbox number yourself).
+   - Twilio **sandbox** first: if you haven't joined, text the join code **`join twilio-trial`** to
+     **`+17372583742`** once, then send any message.
+3. The bot's **first reply is personalized**: *"Hi <your name>, sorry to hear about your car
+   accident. Did you see a doctor for the neck pain?"* and it does **not** re-ask what you typed.
+4. It offers times conversationally near your preferred day. Reply naturally (*"Tuesday afternoon"* /
+   *"the 1:30 one"* / *"anything on Friday?"*). It re-checks the slot and books it, then confirms the
+   actual time.
+5. Want a clean slate while testing? Text **"reset"** (or wait 6h) — a brand-new conversation starts.
 
-## Trade-off you should know about
-Because memory now lives inside *this* workflow, a lead who fills out the **landing page** and then
-replies on **WhatsApp** starts a fresh chat in the bot (the bot can't see the landing-page submission —
-that lived in the old shared Sheet). In practice it's seamless: the lead just restates in their first
-text and the bot collects from there. If you later want true cross-channel continuity (landing page →
-WhatsApp picks up the same case), that needs a shared store (e.g. Redis or the n8n DB) — ask me and
-I'll wire it in for production.
+## Good to know
+- **Bridge key = phone.** The seed is stored under the digits of the phone the lead typed on the form.
+  For personalization to fire, the lead must **text from that same number**. If they don't, the bot
+  falls back to the WhatsApp profile name and just asks what happened (still works, just less tailored).
+- **"Empty `[]`" from Google Calendar is normal.** With *Always Output Data* ON, an empty array means
+  *no events in that window* (the calendar is free) — the slot builder treats that as "everything
+  open." It is not an error.
+- **`silent: true`.** The landing page sends it so the funnel suppresses its own Twilio sends and the
+  bot delivers the single, personalized first message. Remove it if you want the funnel to text too.
+- **No double-booking.** If a slot is taken between the offer and the pick, the bot says so and
+  re-offers fresh times.
+- **24-hour window.** Replies go in the same WhatsApp thread (TwiML). If it's been >24h since the lead
+  messaged, they must text the sandbox again first (sandbox rule).
 
-## Already tested an earlier build?
-Earlier builds kept the conversation in a Google Sheet `Conversations` tab and broke because Sheets
-coerces the phone key (a leading `+` becomes a formula; a digit string becomes a number), so the row
-the bot *read* wasn't the row it *wrote* → duplicate/stale rows → it re-asked questions and sometimes
-replied twice with different "personas." v3.1 removes the Sheet entirely. To adopt:
-1. **Re-import** `pi_inbound_bot_workflow.json` (and the main funnel) — replace the old versions, and
-   make sure only **one** inbound workflow is Active (an old copy still listening would double-reply).
-2. The old `Conversations` tab is no longer used — you can delete it (or just ignore it).
-3. Re-activate both and re-test: the bot now remembers each detail and answers each text exactly once.
+## ⚠️ The one rule that prevents the recurring breakage
+**Never hand-edit the generated JSON, and never tinker with the bot on the n8n canvas.** All changes go
+through the builder, then re-import fresh:
+```
+python3 ~/.claude/skills/pi-intake-funnel-builder/scripts/author_inbound_bot_template.py   # if changing bot logic
+python3 ~/.claude/skills/pi-intake-funnel-builder/scripts/build_workflow.py outputs/demo_config.json \
+  --out outputs/pi_intake_funnel_workflow.json
+```
+Editing in the UI is what kept re-introducing the split-brain / stuck-loop / merge bugs.

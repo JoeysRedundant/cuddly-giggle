@@ -173,13 +173,14 @@ Save.
 
 ## 6. Verify (already wired earlier — just confirm)
 - **Webhook** node → *Options* → **Allowed Origins (CORS)** = `*`
-- Both **Twilio** nodes → **From** = `+14155238886`, **To Whatsapp** = ON
+- Both **Twilio** nodes → **From** = `+17372583742`, **To Whatsapp** = ON
 - Workflow toggle (top-right) = **Active**. Save once more if you flipped anything.
 
 ---
 
 ## 7. Test the three paths
-1. Text **`hi`** to **+14155238886** from your phone to reopen the 24-hour WhatsApp window.
+1. Join the sandbox: text **`join twilio-trial`** to **+17372583742** once (first time only), then text
+   **`hi`** any time to reopen the 24-hour WhatsApp window.
 2. Go to **https://pi-landing-site.vercel.app**, click each demo button, **put your own joined
    number in the phone field**, and submit:
    - **Qualified lead** → on-page "your case qualifies", calendar event booked, WhatsApp confirm, log row `Status=qualified`

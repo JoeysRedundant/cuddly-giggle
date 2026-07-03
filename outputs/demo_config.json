@@ -1,8 +1,9 @@
 {
   "firm_name": "Sunshine Injury Law",
   "attorney_calendar_id": "josemor1669@gmail.com",
-  "twilio_from_number": "+14155238886",
+  "twilio_from_number": "+17372583742",
   "messaging_channel": "whatsapp",
+  "funnel_whatsapp_send": true,
   "timezone": "America/New_York",
   "business_hours": "Mon–Fri 09:00–17:00",
   "consult_duration_minutes": 30,

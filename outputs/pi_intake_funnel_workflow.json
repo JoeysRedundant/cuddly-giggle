@@ -146,11 +146,32 @@
               "id": "s1",
               "name": "system_prompt",
               "type": "string",
-              "value": "You are an AI intake assistant for Sunshine Injury Law, a personal injury law firm. Your ONLY job is to (1) qualify inbound leads against the firm's criteria and (2) tee qualified leads up to choose a consultation time. You are not a lawyer and you are not the firm's representative.\n\nPRACTICE AREAS: auto accidents, slip & fall / premises, workers' comp, medical malpractice\nQUALIFYING CRITERIA (the firm's must-haves): incident recent / within statute of limitations; the person was injured and received medical treatment; a clear at-fault other party; not already represented by another attorney; insurance available\n\n=== HARD COMPLIANCE RULES (never violate) ===\n- You QUALIFY ONLY.\n- NEVER give legal advice of any kind.\n- NEVER assess, estimate, or comment on case value, merit, strength, or likely outcome.\n- NEVER guarantee or imply any result.\n- NEVER make promises or representations on behalf of Sunshine Injury Law.\n- Do NOT state or imply that an attorney-client relationship exists; it does not.\n- If the lead asks for legal advice or \"what is my case worth / will I win,\" the sms_reply must politely decline to give advice and steer them to the consultation. Example tone: \"I can't give legal advice, but an attorney can cover that during your consult.\"\n\n=== INPUT ===\nYou receive the lead's submitted info as fields: name, phone, email, case_description.\n\n=== DECISION MODEL (choose EXACTLY ONE status) ===\n1. \"declined\" — the lead is clearly NOT a fit. Use when ANY hard disqualifier is true:\n   - The incident does not fall within any PRACTICE AREA (e.g. family/divorce, criminal, contract, landlord/tenant, general consumer complaint).\n   - No injury at all / only property damage / the person says they are fine.\n   - The incident is clearly outside the statute of limitations (e.g. \"a few years ago\" with nothing suggesting it is still timely).\n   - The lead is already represented by another attorney for this matter.\n   - There is plainly no other at-fault party (the lead is solely at fault).\n   Reply politely and briefly; give no legal reasons and no advice.\n2. \"needs_info\" — the incident plausibly fits a practice area, but at least one MUST-HAVE is simply unknown/missing (not failed). Must-haves: when it happened (recency/SOL); injury & medical treatment; another at-fault party; whether they already have a lawyer; insurance involved. ALSO use this when case_description is empty, blank, or gibberish. Ask for the SINGLE most important missing item only.\n3. \"qualified\" — the incident fits a PRACTICE AREA, NO hard disqualifier is present, AND every must-have is known and satisfied.\n\nBe robust to messy, informal, or partial input. NEVER fabricate facts the lead did not provide. When unsure between qualified and needs_info, choose needs_info and ask for the missing item.\n\n=== SMS RULES ===\n- Friendly, warm, plain-English, concise (aim ~160 characters; never long). No markdown, no emoji spam, no links unless provided to you.\n- qualified: a short, warm line telling them they look like a good fit and to pick a time below to lock in their free consult. Do NOT state a specific time or say it is already booked. Example: \"Good news — your case looks like a fit! Pick a time below and we'll lock in your free consult with Sunshine Injury Law.\"\n- needs_info: ask the SINGLE most important missing question, warmly. Never list multiple questions. Never give legal advice.\n- declined: be kind and brief; thank them and let them know this is not something the firm can take on, without giving legal advice or reasons that resemble advice. Do not promise a callback.\n\n=== OUTPUT (STRICT) ===\nRespond with ONLY a single minified JSON object. No markdown, no code fences, no prose before or after. Exactly these keys:\n{\"qualified\":boolean,\"status\":\"qualified|needs_info|declined\",\"reason\":\"short internal-only explanation\",\"missing_info\":[\"...\"],\"sms_reply\":\"the message to text or show the lead\"}\n\nRules for output:\n- \"status\": exactly one of \"qualified\", \"needs_info\", \"declined\".\n- \"qualified\": boolean; it MUST be true if and only if status is \"qualified\".\n- \"reason\": brief internal note for the firm (not sent to the lead). Never contains legal advice.\n- \"missing_info\": array of strings — the must-haves still unknown. Use an empty array [] for qualified or declined.\n- \"sms_reply\": the message per SMS RULES above. Always present, for every status.\n- Output must be valid, parseable JSON. No trailing commas, no comments, no text outside the JSON object."
+              "value": "You are an AI intake assistant for Sunshine Injury Law, a personal injury law firm. Your ONLY job is to (1) qualify inbound leads against the firm's criteria and (2) tee qualified leads up to choose a consultation time. You are not a lawyer and you are not the firm's representative.\n\nPRACTICE AREAS: auto accidents, slip & fall / premises, workers' comp, medical malpractice\nQUALIFYING CRITERIA (the firm's must-haves): incident recent / within statute of limitations; the person was injured and received medical treatment; a clear at-fault other party; not already represented by another attorney; insurance available\n\n=== HARD COMPLIANCE RULES (never violate) ===\n- You QUALIFY ONLY.\n- NEVER give legal advice of any kind.\n- NEVER assess, estimate, or comment on case value, merit, strength, or likely outcome.\n- NEVER guarantee or imply any result.\n- NEVER make promises or representations on behalf of Sunshine Injury Law.\n- Do NOT state or imply that an attorney-client relationship exists; it does not.\n- If the lead asks for legal advice or \"what is my case worth / will I win,\" the sms_reply must politely decline to give advice and steer them to the consultation. Example tone: \"I can't give legal advice, but an attorney can cover that during your consult.\"\n\n=== INPUT ===\nYou receive the lead's submitted info as fields: name, phone, email, case_description.\n\n=== DECISION MODEL (choose EXACTLY ONE status) ===\n1. \"declined\": thelead is clearly NOT a fit. Use when ANY hard disqualifier is true:\n   - The incident does not fall within any PRACTICE AREA (e.g. family/divorce, criminal, contract, landlord/tenant, general consumer complaint).\n   - No injury at all / only property damage / the person says they are fine.\n   - The incident is clearly outside the statute of limitations (e.g. \"a few years ago\" with nothing suggesting it is still timely).\n   - The lead is already represented by another attorney for this matter.\n   - There is plainly no other at-fault party (the lead is solely at fault).\n   Reply politely and briefly; give no legal reasons and no advice.\n2. \"needs_info\": theincident plausibly fits a practice area, but at least one MUST-HAVE is simply unknown/missing (not failed). Must-haves: when it happened (recency/SOL); injury & medical treatment; another at-fault party; insurance involved. Do NOT ask whether they already have a lawyer or attorney; assume they do not, since they contacted us, and only treat prior representation as a disqualifier if they volunteer it. ALSO use this when case_description is empty, blank, or gibberish. Ask for the SINGLE most important missing item only.\n3. \"qualified\": theincident fits a PRACTICE AREA, NO hard disqualifier is present, AND every must-have is known and satisfied.\n\nBe robust to messy, informal, or partial input. NEVER fabricate facts the lead did not provide. When unsure between qualified and needs_info, choose needs_info and ask for the missing item.\n\n=== SMS RULES ===\n- GREETING: This is the FIRST message the lead receives, so open by greeting them by their FIRST name from the submitted info (for example \"Hi Jose,\"). Greet only this once. NEVER invent, guess, or assume a name; if the name field is blank, greet warmly without one.\n- WRITING STYLE: Text the way a friendly human does. Do NOT use a hyphen, an en dash, or an em dash anywhere in the message; use commas, periods, or separate sentences instead.\n- Friendly, warm, plain-English, concise (aim ~160 characters; never long). No markdown, no emoji spam, no links unless provided to you.\n- qualified: a short, warm line telling them they look like a good fit and to pick a time below to lock in their free consult. Do NOT state a specific time or say it is already booked. Example: \"Good news, your case looks like a fit! Pick a time below and we'll lock in your free consult with Sunshine Injury Law.\"\n- needs_info: ask the SINGLE most important missing question, warmly. Never list multiple questions. Never give legal advice.\n- declined: be kind and brief; thank them and let them know this is not something the firm can take on, without giving legal advice or reasons that resemble advice. Do not promise a callback.\n\n=== OUTPUT (STRICT) ===\nRespond with ONLY a single minified JSON object. No markdown, no code fences, no prose before or after. Exactly these keys:\n{\"qualified\":boolean,\"status\":\"qualified|needs_info|declined\",\"reason\":\"short internal-only explanation\",\"missing_info\":[\"...\"],\"sms_reply\":\"the message to text or show the lead\"}\n\nRules for output:\n- \"status\": exactly one of \"qualified\", \"needs_info\", \"declined\".\n- \"qualified\": boolean; it MUST be true if and only if status is \"qualified\".\n- \"reason\": brief internal note for the firm (not sent to the lead). Never contains legal advice.\n- \"missing_info\": array of strings, the must-haves still unknown. Use an empty array [] for qualified or declined.\n- \"sms_reply\": the message per SMS RULES above. Always present, for every status.\n- Output must be valid, parseable JSON. No trailing commas, no comments, no text outside the JSON object."
             }
           ]
         },
         "options": {}
+      }
+    },
+    {
+      "id": "n25-seedbot",
+      "name": "HTTP: Seed Bot Context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        440
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://josesn8n.win/webhook/pi-inbound",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ seed: true, phone: $('Set: Normalize Lead').item.json.phone, name: $('Set: Normalize Lead').item.json.name, case_description: $('Set: Normalize Lead').item.json.case_description, preferred_date: $('Set: Normalize Lead').item.json.preferred_date }) }}",
+        "options": {
+          "timeout": 8000
+        }
       }
     },
     {
@@ -310,56 +331,6 @@
       }
     },
     {
-      "id": "Google Sheets: Log (Qualified)",
-      "name": "Google Sheets: Log (Qualified)",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4,
-      "position": [
-        2580,
-        100
-      ],
-      "onError": "continueRegularOutput",
-      "retryOnFail": true,
-      "maxTries": 2,
-      "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "REPLACE_WITH_YOUR_SHEET_ID"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "Sheet1"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Timestamp": "={{ $('Set: Normalize Lead').item.json.receivedAt }}",
-            "Name": "={{ $('Set: Normalize Lead').item.json.name }}",
-            "Phone": "={{ $('Set: Normalize Lead').item.json.phone }}",
-            "Email": "={{ $('Set: Normalize Lead').item.json.email }}",
-            "Qualified": "={{ $('Code: Parse AI JSON').item.json.qualified }}",
-            "Status": "={{ $('Code: Parse AI JSON').item.json.status }}",
-            "Reason": "={{ $('Code: Parse AI JSON').item.json.reason }}",
-            "Consult Slot": "",
-            "SMS Sent": "={{ $('Code: Parse AI JSON').item.json.sms_reply }}",
-            "Case Description": "={{ $('Set: Normalize Lead').item.json.case_description }}"
-          },
-          "matchingColumns": [],
-          "schema": []
-        },
-        "options": {}
-      },
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "REPLACE_GSHEETS_CRED",
-          "name": "Google Sheets account"
-        }
-      }
-    },
-    {
       "id": "Respond: Slots",
       "name": "Respond: Slots",
       "type": "n8n-nodes-base.respondToWebhook",
@@ -372,6 +343,64 @@
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ status: 'ok', qualified: true, verdict: $('Code: Parse AI JSON').item.json.status, sms_reply: $('Code: Parse AI JSON').item.json.sms_reply, slots: $('Code: Build Slots').item.json.slots }) }}",
         "options": {}
+      }
+    },
+    {
+      "id": "n26-if-silent-qualify",
+      "name": "If: Silent? (qualify)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Set: Normalize Lead').item.json.silent }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "Twilio: Confirm Qualify SMS",
+      "name": "Twilio: Confirm Qualify SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "onError": "continueRegularOutput",
+      "position": [
+        2620,
+        200
+      ],
+      "parameters": {
+        "from": "+17372583742",
+        "to": "={{ $('Set: Normalize Lead').item.json.phone }}",
+        "message": "={{ $('Code: Parse AI JSON').item.json.sms_reply }}",
+        "toWhatsapp": true,
+        "options": {}
+      },
+      "credentials": {
+        "twilioApi": {
+          "id": "REPLACE_TWILIO_CRED",
+          "name": "Twilio account"
+        }
       }
     },
     {
@@ -413,12 +442,13 @@
       "name": "Twilio: Follow-up SMS",
       "type": "n8n-nodes-base.twilio",
       "typeVersion": 1,
+      "onError": "continueRegularOutput",
       "position": [
         2140,
         280
       ],
       "parameters": {
-        "from": "+14155238886",
+        "from": "+17372583742",
         "to": "={{ $('Set: Normalize Lead').item.json.phone }}",
         "message": "={{ $('Code: Parse AI JSON').item.json.sms_reply }}",
         "toWhatsapp": true,
@@ -428,56 +458,6 @@
         "twilioApi": {
           "id": "REPLACE_TWILIO_CRED",
           "name": "Twilio account"
-        }
-      }
-    },
-    {
-      "id": "Google Sheets: Log (Follow-up)",
-      "name": "Google Sheets: Log (Follow-up)",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4,
-      "position": [
-        2580,
-        360
-      ],
-      "onError": "continueRegularOutput",
-      "retryOnFail": true,
-      "maxTries": 2,
-      "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "REPLACE_WITH_YOUR_SHEET_ID"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "Sheet1"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Timestamp": "={{ $('Set: Normalize Lead').item.json.receivedAt }}",
-            "Name": "={{ $('Set: Normalize Lead').item.json.name }}",
-            "Phone": "={{ $('Set: Normalize Lead').item.json.phone }}",
-            "Email": "={{ $('Set: Normalize Lead').item.json.email }}",
-            "Qualified": "={{ $('Code: Parse AI JSON').item.json.qualified }}",
-            "Status": "={{ $('Code: Parse AI JSON').item.json.status }}",
-            "Reason": "={{ $('Code: Parse AI JSON').item.json.reason }}",
-            "Consult Slot": "",
-            "SMS Sent": "={{ $('Code: Parse AI JSON').item.json.sms_reply }}",
-            "Case Description": "={{ $('Set: Normalize Lead').item.json.case_description }}"
-          },
-          "matchingColumns": [],
-          "schema": []
-        },
-        "options": {}
-      },
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "REPLACE_GSHEETS_CRED",
-          "name": "Google Sheets account"
         }
       }
     },
@@ -606,6 +586,7 @@
         "start": "={{ $('Code: Verify Free').item.json.startISO }}",
         "end": "={{ $('Code: Verify Free').item.json.endISO }}",
         "additionalFields": {
+          "timezone": "America/New_York",
           "summary": "=PI Consult — {{ $('Set: Normalize Lead').item.json.name }}",
           "description": "=AI-booked personal injury intake consult. | Lead: {{ $('Set: Normalize Lead').item.json.name }} | Phone: {{ $('Set: Normalize Lead').item.json.phone }} | Email: {{ $('Set: Normalize Lead').item.json.email }} | Case (lead's words): {{ $('Set: Normalize Lead').item.json.case_description }} | COMPLIANCE: AI qualified & scheduled only — no legal advice given, no case merit assessed."
         }
@@ -628,6 +609,27 @@
       ],
       "parameters": {
         "jsCode": "const lead = $('Set: Normalize Lead').item.json;\nconst vf = $('Code: Verify Free').item.json;\nconst firm = \"Sunshine Injury Law\";\nconst first = (lead.name || \"\").trim().split(/\\s+/)[0] || \"there\";\nconst sms = \"Thanks \" + first + \"! Your free consult with \" + firm + \" is booked for \" + vf.human + \". See you then!\";\nreturn [{ json: { sms_reply: sms, human: vf.human } }];\n"
+      }
+    },
+    {
+      "id": "n27-notifybooked",
+      "name": "HTTP: Notify Bot Booked",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2140,
+        700
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://josesn8n.win/webhook/pi-inbound",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ seed: true, booked: true, phone: $('Set: Normalize Lead').item.json.phone, name: $('Set: Normalize Lead').item.json.name, case_description: $('Set: Normalize Lead').item.json.case_description, booked_label: $('Code: Confirm Message').item.json.human, booked_iso: $('Code: Verify Free').item.json.startISO }) }}",
+        "options": {
+          "timeout": 8000
+        }
       }
     },
     {
@@ -669,12 +671,13 @@
       "name": "Twilio: Confirm Booking SMS",
       "type": "n8n-nodes-base.twilio",
       "typeVersion": 1,
+      "onError": "continueRegularOutput",
       "position": [
         2360,
         460
       ],
       "parameters": {
-        "from": "+14155238886",
+        "from": "+17372583742",
         "to": "={{ $('Set: Normalize Lead').item.json.phone }}",
         "message": "={{ $('Code: Confirm Message').item.json.sms_reply }}",
         "toWhatsapp": true,
@@ -684,56 +687,6 @@
         "twilioApi": {
           "id": "REPLACE_TWILIO_CRED",
           "name": "Twilio account"
-        }
-      }
-    },
-    {
-      "id": "Google Sheets: Log (Booked)",
-      "name": "Google Sheets: Log (Booked)",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4,
-      "position": [
-        2580,
-        540
-      ],
-      "onError": "continueRegularOutput",
-      "retryOnFail": true,
-      "maxTries": 2,
-      "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "REPLACE_WITH_YOUR_SHEET_ID"
-        },
-        "sheetName": {
-          "__rl": true,
-          "mode": "name",
-          "value": "Sheet1"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Timestamp": "={{ $('Set: Normalize Lead').item.json.receivedAt }}",
-            "Name": "={{ $('Set: Normalize Lead').item.json.name }}",
-            "Phone": "={{ $('Set: Normalize Lead').item.json.phone }}",
-            "Email": "={{ $('Set: Normalize Lead').item.json.email }}",
-            "Qualified": "true",
-            "Status": "booked",
-            "Reason": "Booked via slot picker",
-            "Consult Slot": "={{ $('Code: Confirm Message').item.json.human }}",
-            "SMS Sent": "={{ $('Code: Confirm Message').item.json.sms_reply }}",
-            "Case Description": "={{ $('Set: Normalize Lead').item.json.case_description }}"
-          },
-          "matchingColumns": [],
-          "schema": []
-        },
-        "options": {}
-      },
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "REPLACE_GSHEETS_CRED",
-          "name": "Google Sheets account"
         }
       }
     },
@@ -835,6 +788,11 @@
             "node": "Set: AI Config",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "HTTP: Seed Bot Context",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -927,14 +885,32 @@
       "main": [
         [
           {
-            "node": "Google Sheets: Log (Qualified)",
+            "node": "If: Silent? (qualify)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Google Sheets: Log (Qualified)": {
+    "If: Silent? (qualify)": {
+      "main": [
+        [
+          {
+            "node": "Respond: Slots",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Twilio: Confirm Qualify SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twilio: Confirm Qualify SMS": {
       "main": [
         [
           {
@@ -949,7 +925,7 @@
       "main": [
         [
           {
-            "node": "Google Sheets: Log (Follow-up)",
+            "node": "Respond: Not Qualified",
             "type": "main",
             "index": 0
           }
@@ -964,17 +940,6 @@
       ]
     },
     "Twilio: Follow-up SMS": {
-      "main": [
-        [
-          {
-            "node": "Google Sheets: Log (Follow-up)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Sheets: Log (Follow-up)": {
       "main": [
         [
           {
@@ -1054,6 +1019,11 @@
             "node": "If: Silent? (book)",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "HTTP: Notify Bot Booked",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1062,7 +1032,7 @@
       "main": [
         [
           {
-            "node": "Google Sheets: Log (Booked)",
+            "node": "Respond: Booked",
             "type": "main",
             "index": 0
           }
@@ -1077,17 +1047,6 @@
       ]
     },
     "Twilio: Confirm Booking SMS": {
-      "main": [
-        [
-          {
-            "node": "Google Sheets: Log (Booked)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Sheets: Log (Booked)": {
       "main": [
         [
           {
