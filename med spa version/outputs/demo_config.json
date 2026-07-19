@@ -1,0 +1,18 @@
+{
+  "spa_name": "Glow Aesthetics Med Spa",
+  "provider_calendar_id": "josemor1669@gmail.com",
+  "twilio_from_number": "+17372583742",
+  "messaging_channel": "whatsapp",
+  "funnel_whatsapp_send": true,
+  "timezone": "America/New_York",
+  "business_hours": "Mon–Fri 09:00–17:00",
+  "consult_duration_minutes": 30,
+  "services_offered": "Botox and dermal fillers, laser hair removal, HydraFacial, chemical peels, microneedling, body contouring",
+  "qualifying_criteria": "interested in a treatment the spa offers; 18 or older; not describing a medical emergency or an active complication from a prior procedure; able to come in for an in-person consultation",
+  "log_sheet_id": "",
+  "reschedule_link": "",
+  "cors_origins": "*",
+  "default_dial_code": "1",
+  "claude_model": "claude-haiku-4-5-20251001",
+  "n8n_base_url": "https://josesn8n.win"
+}

@@ -1,0 +1,768 @@
+{
+  "name": "Med Spa Intake Funnel — Glow Aesthetics Med Spa — Inbound WhatsApp Bot",
+  "nodes": [
+    {
+      "id": "i00-sticky",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        80
+      ],
+      "parameters": {
+        "content": "## Med Spa Inbound WhatsApp Bot — v4.4 (AI Agent + form bridge, single greeting)\nOne self-contained workflow. Credentials: **Anthropic** (chat model) + **Google Calendar** (availability + booking). No Twilio creds, no Sheets.\n\n**Form bridge:** the website funnel POSTs the intake-form context here (a `seed` call: name + what they want + preferred date, keyed by phone). The bot stashes it so its FIRST reply greets by name and references their actual request — it never re-asks the form.\n\n**Behaviour:**\n1. Greets AT MOST ONCE per person, enforced deterministically (not model-trusted): a per-phone everGreeted flag drives the prompt's opening rule, and Route strips any stray salutation past the one allowed greeting. A funnel kick-off text (seed `greeted:true`) counts as that one greeting. Personalized from the form: acknowledges their specific interest, asks only the next MISSING detail, never re-asks.\n2. Offers real open times CONVERSATIONALLY (no \"reply 1/2/3\"); accepts \"the 1:30 one\", \"Tuesday afternoon\", etc.; the lead can change the day. Times span multiple days.\n3. Booking stays deterministic (re-check the slot, then create) — best-effort, no hard lock.\n4. New conversation after 6h idle or a \"reset\" text.\n\n**Important:** the two Google Calendar getAll nodes have **Always Output Data ON** — without it, an empty calendar emits zero items and the flow dead-ends with no reply.\n\n**Setup:** Twilio WhatsApp Sandbox → \"When a message comes in\" = `<your-n8n>/webhook/medspa-inbound` (POST). Wire the two credentials, then **Activate** (static data + memory only persist on active production runs). Import this file FRESH — do not merge it onto another workflow's canvas.",
+        "height": 400,
+        "width": 520,
+        "color": 4
+      }
+    },
+    {
+      "id": "i01-webhook",
+      "name": "Inbound Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        160,
+        380
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "medspa-inbound",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "medspa-inbound-webhook"
+    },
+    {
+      "id": "i02-parse",
+      "name": "Code: Parse Inbound",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        380
+      ],
+      "parameters": {
+        "jsCode": "// Twilio WhatsApp inbound is form-encoded; n8n nests it under $json.body. The website funnel\n// ALSO POSTs a JSON \"seed\" here carrying the intake-form fields so this bot can personalize.\nconst b = $json.body || $json;\nfunction digits(s){ return String(s||'').replace(/^whatsapp:/i,'').replace(/\\D/g,''); }\nconst RESET_HOURS = 6;\n\nconst store = $getWorkflowStaticData('global');\nstore.sessions = store.sessions || {};\n\n// --- SEED PATH: the funnel handing off the web-form context (name/case/preferred date) -------\n// This is NOT a Twilio message; it carries seed:true and the lead's phone. Two flavors:\n//   - plain (qualify) seed: a fresh web-form submission. Stash it keyed by phone (same digits()\n//     key the inbound path uses) and start a FRESH conversation so the bot's first reply is\n//     personalized and re-asks nothing the form already captured.\n//   - booked seed (booked:true, fired when the lead books via the landing-page slot picker):\n//     mark the SAME conversation as booked in place. This is a continuation of the case the\n//     qualify seed already started, not a new one, so it does NOT bump convId / reset memory.\nconst isSeed = (b.seed === true || b.seed === 'true');\nif (isSeed) {\n  const sphone = digits(b.phone || b.Phone || b.to || b.To);\n  const isBookedSeed = (b.booked === true || b.booked === 'true');\n  if (sphone) {\n    const prev = store.sessions[sphone] || null;\n    if (isBookedSeed) {\n      // Keep the existing lead context if we have one; fall back to the booked seed's own\n      // fields only if somehow no prior (qualify) session exists for this phone yet.\n      const lead = (prev && prev.lead) ? prev.lead : {\n        name: String(b.name || b.Name || '').trim(),\n        caseText: String(b.treatment_interest || b.case_description || b.case || b.details || '').trim(),\n        preferredDate: ''\n      };\n      store.sessions[sphone] = {\n        convId: (prev && prev.convId) || 1,\n        lastActivity: Date.now(),\n        lastSid: (prev && prev.lastSid) || '',\n        lastTwiml: (prev && prev.lastTwiml) || '',\n        turns: (prev && prev.turns) || 0,\n        everGreeted: true, // booked = past intake; never greet them as a brand-new contact\n        offered: [],\n        awaitingPick: false,\n        lead: lead,\n        booked: true,\n        bookedLabel: String(b.booked_label || b.bookedLabel || '').trim()\n      };\n    } else {\n      const convId = prev ? ((prev.convId || 1) + 1) : 1;\n      // greeted on the seed says whether the FUNNEL texts this lead itself (sms channel or the\n      // funnel_whatsapp_send opt-in, and not silenced) — if so, its kick-off IS the one greeting.\n      // A seed WITHOUT an explicit greeted:false (e.g. an older funnel build still live) is\n      // treated as greeted so a stale funnel + new bot can never double-greet; only the current\n      // funnel's explicit greeted:false unlocks the bot's own first-turn greeting. Once anyone\n      // has greeted this phone the flag sticks — it survives seed resets and idle boundaries.\n      const funnelGreeted = !(b.greeted === false || b.greeted === 'false');\n      store.sessions[sphone] = {\n        convId: convId,\n        lastActivity: Date.now(),\n        lastSid: '',\n        lastTwiml: '',\n        turns: 0,\n        everGreeted: !!(prev && prev.everGreeted) || funnelGreeted,\n        offered: [],\n        awaitingPick: false,\n        lead: {\n          name: String(b.name || b.Name || '').trim(),\n          caseText: String(b.treatment_interest || b.case_description || b.case || b.details || '').trim(),\n          preferredDate: String(b.preferred_date || b.preferredDate || '').trim()\n        },\n        booked: false,\n        bookedLabel: ''\n      };\n    }\n  }\n  return [{ json: { isSeed: true, phone: sphone, sessionKey: sphone + ':seed' } }];\n}\n\n// --- NORMAL INBOUND PATH ---------------------------------------------------------------------\nconst phone = digits(b.From || b.from);\nlet text = String(b.Body || b.body || '').trim();\nif (!text) text = '(the lead sent a non-text message)';\nconst profileName = String(b.ProfileName || b.profileName || '').trim();\nconst sid  = String(b.MessageSid || b.SmsMessageSid || b.messageSid || '');\n\nconst s = store.sessions[phone] || null;\n// Carry the seeded form context (set when the funnel handed off) across every turn.\nconst seededLead = (s && s.lead) ? s.lead : {};\n// Prefer the name the lead typed on the intake form over the WhatsApp profile name.\nconst name = (seededLead.name && seededLead.name.trim()) ? seededLead.name.trim() : profileName;\n\n// Idempotency — claim this MessageSid at the TOP, before the slow agent/calendar work.\n// Twilio retries an inbound precisely because our reply was slow, so the retry arrives\n// WHILE the first run is still in flight. By writing lastSid now (with an empty lastTwiml\n// meaning \"in flight\"), the retry is caught here: if the first run has not finished we ack\n// with an empty TwiML; once it finishes the terminal node stores the real reply and any\n// later retry of the same sid replays it.\nif (s && sid && s.lastSid === sid) {\n  return [{ json: {\n    phone, text, name, sid,\n    sessionKey: phone + ':' + (s.convId || 1),\n    leadCase: seededLead.caseText || '', preferredDate: seededLead.preferredDate || '',\n    isDuplicate: true,\n    dedupTwiml: s.lastTwiml || '<Response></Response>'\n  } }];\n}\n\n// Conversation boundary — a new conversation (fresh agent memory) starts when the last\n// activity was long ago, or the lead explicitly resets. Case text is NOT stored here; it\n// lives in the agent's window memory keyed by sessionKey.\nconst nowMs = Date.now();\nconst gapMs = RESET_HOURS * 3600 * 1000;\nconst isReset = /^\\s*(reset|restart|start over|new request|new appointment)\\s*[.!?]*\\s*$/i.test(text);\nconst newConv = !s ? false : (isReset || (s.lastActivity && (nowMs - s.lastActivity) > gapMs));\nconst convId = !s ? 1 : (newConv ? (s.convId || 1) + 1 : (s.convId || 1));\n// \"booked\" survives an ordinary idle gap — a \"thanks\" minutes or hours later must still be\n// handled as booked — and is cleared ONLY by an explicit reset text, not merely by the idle\n// timeout boundary (which still bumps convId / clears offered as before). A genuinely new\n// conversation (the lead resetting on purpose) clears it; a stale-but-same conversation does not.\nconst stillBooked = !!(s && s.booked === true && !isReset);\nconst bookedLabel = stillBooked ? String(s.bookedLabel || '') : '';\n\n// Greeting policy — the person is greeted at most ONCE, ever, per phone: either by the funnel's\n// own kick-off text (the seed carries greeted:true when that path is enabled) or by this bot on\n// the FIRST turn of a conversation. The grant is burned the moment it is given, and everGreeted\n// sticks in static data, so a seed reset, an idle boundary, or a model hiccup can never produce\n// a second greeting. Booked leads are past intake and are never greeted as new contacts.\nconst turn = newConv ? 1 : (((s && s.turns) || 0) + 1);\nconst seeded = !!(s && s.lead && (s.lead.name || s.lead.caseText || s.lead.preferredDate));\nconst allowGreeting = turn === 1 && !stillBooked && !(s && s.everGreeted);\n\n// Claim the sid now (lastTwiml '' = in flight). Preserve offered/awaitingPick within a\n// conversation so Build Slots / Route can see what the lead was last shown; clear them on a\n// new conversation. PRESERVE the seeded form context (lead) and the booked status on every turn.\nstore.sessions[phone] = {\n  convId: convId,\n  lastActivity: nowMs,\n  lastSid: sid,\n  lastTwiml: '',\n  turns: turn,\n  everGreeted: allowGreeting ? true : !!(s && s.everGreeted),\n  offered: newConv ? [] : (s && Array.isArray(s.offered) ? s.offered : []),\n  awaitingPick: newConv ? false : !!(s && s.awaitingPick),\n  lead: (s && s.lead) ? s.lead : null,\n  booked: stillBooked,\n  bookedLabel: bookedLabel\n};\n\nreturn [{ json: {\n  phone, text, name, sid, sessionKey: phone + ':' + convId,\n  leadCase: seededLead.caseText || '', preferredDate: seededLead.preferredDate || '',\n  booked: stillBooked, bookedLabel: bookedLabel,\n  turn, seeded, allowGreeting,\n  isDuplicate: false, dedupTwiml: '<Response></Response>'\n} }];"
+      }
+    },
+    {
+      "id": "i23-seedif",
+      "name": "If: Seed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        380,
+        180
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0",
+              "leftValue": "={{ $json.isSeed ? 'seed' : 'no' }}",
+              "rightValue": "seed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "i24-seedack",
+      "name": "Code: Seed Ack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        180
+      ],
+      "parameters": {
+        "jsCode": "// The funnel just handed off the web-form context (already stored by Parse Inbound). Acknowledge\n// with an empty 200 — no WhatsApp message is owed here; the bot greets the lead, personalized,\n// when they actually text. The funnel ignores this body.\nreturn [{ json: { twiml: '<Response></Response>' } }];"
+      }
+    },
+    {
+      "id": "i03-dup",
+      "name": "If: Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        600,
+        380
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0",
+              "leftValue": "={{ $json.isDuplicate ? 'dup' : 'new' }}",
+              "rightValue": "dup",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "i04-echo",
+      "name": "Code: Echo Dedup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        200
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { twiml: $('Code: Parse Inbound').item.json.dedupTwiml || '<Response></Response>' } }];"
+      }
+    },
+    {
+      "id": "i05-availwin",
+      "name": "Code: Availability Window",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        460
+      ],
+      "parameters": {
+        "jsCode": "const tz = \"America/New_York\";\nconst days = 14;\nconst inb = $('Code: Parse Inbound').item.json;\nconst now = DateTime.now().setZone(tz);\n// Always fetch from now (today stays bookable); extend the far end to cover a future preferred\n// day from the form so a lead who wants a date further out actually has openings fetched for it.\nlet far = now;\nif (inb.preferredDate) { const p = DateTime.fromISO(inb.preferredDate, { zone: tz }); if (p.isValid && p.startOf('day') > now) far = p.startOf('day'); }\nreturn [{ json: { timeMin: now.toISO(), timeMax: far.plus({ days }).endOf('day').toISO() } }];"
+      }
+    },
+    {
+      "id": "i06-avail",
+      "name": "Google Calendar: Get Availability",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        460
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "josemor1669@gmail.com"
+        },
+        "returnAll": true,
+        "options": {
+          "timeMin": "={{ $json.timeMin }}",
+          "timeMax": "={{ $json.timeMax }}",
+          "singleEvents": true
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_GCAL_CRED",
+          "name": "Google Calendar account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "i07-slots",
+      "name": "Code: Build Slots",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        460
+      ],
+      "parameters": {
+        "jsCode": "const inb = $('Code: Parse Inbound').item.json;\nconst tz = \"America/New_York\";\nconst startHour = 9;\nconst endHour = 17;\nconst duration = 30;\nconst interval = 30;\nconst days = 14;\nconst PER_DAY = 3;   // spread offers across days so the lead can change the day\nconst TOTAL = 12;    // overall cap — covers ~4+ business days of openings\n\nconst store = $getWorkflowStaticData('global');\nconst sess = (store.sessions && store.sessions[inb.phone]) || {};\nconst awaitingPick = sess.awaitingPick === true && Array.isArray(sess.offered) && sess.offered.length > 0;\n\nlet out;\nif (awaitingPick) {\n  // The lead is choosing from times we already offered — reuse that EXACT set so the choice\n  // maps to the time they saw (no per-turn re-numbering).\n  out = sess.offered;\n} else {\n  // getAll runs with alwaysOutputData, so an empty calendar yields one empty item => no busy\n  // events => everything open. Build a set of openings SPANNING days (<=PER_DAY each).\n  const events = $input.all().map(i => i.json).filter(Boolean);\n  const busy = [];\n  for (const ev of events) {\n    if (!ev || ev.status === 'cancelled' || ev.transparency === 'transparent') continue;\n    const s = ev.start && (ev.start.dateTime || ev.start.date);\n    const e = ev.end && (ev.end.dateTime || ev.end.date);\n    if (!s || !e) continue;\n    busy.push([DateTime.fromISO(s, { zone: tz }), DateTime.fromISO(e, { zone: tz })]);\n  }\n  const overlaps = (s, e) => busy.some(([bs, be]) => s < be && e > bs);\n  const now = DateTime.now().setZone(tz).plus({ minutes: 60 });\n  // Honor a preferred date from the form: start the spread on that future day so a lead who\n  // asked for a day further out sees THAT day's times first, not just today's.\n  let pref = null;\n  if (inb.preferredDate) { const p = DateTime.fromISO(inb.preferredDate, { zone: tz }); if (p.isValid && p.startOf('day') > now) pref = p.startOf('day'); }\n  out = [];\n  let dt = (pref || now).set({ minute: 0, second: 0, millisecond: 0 });\n  const limit = dt.plus({ days });\n  let curDay = dt.toFormat('yyyy-LL-dd');\n  let perDay = 0;\n  let guard = 0;\n  while (out.length < TOTAL && dt < limit && guard < 12000) {\n    guard++;\n    const dayKey = dt.toFormat('yyyy-LL-dd');\n    if (dayKey !== curDay) { curDay = dayKey; perDay = 0; }\n    if (dt.weekday > 5) { dt = dt.plus({ days: 1 }).set({ hour: startHour, minute: 0, second: 0, millisecond: 0 }); continue; }\n    if (dt.hour < startHour) { dt = dt.set({ hour: startHour, minute: 0, second: 0, millisecond: 0 }); }\n    const dayEnd = dt.set({ hour: endHour, minute: 0, second: 0, millisecond: 0 });\n    if (perDay >= PER_DAY || dt.plus({ minutes: duration }) > dayEnd) {\n      dt = dt.plus({ days: 1 }).set({ hour: startHour, minute: 0, second: 0, millisecond: 0 });\n      continue;\n    }\n    if (dt < now) { dt = dt.plus({ minutes: interval }); continue; }\n    if (!overlaps(dt, dt.plus({ minutes: duration }))) {\n      out.push({ iso: dt.toISO(), label: dt.toFormat(\"cccc, LLL d 'at' h:mm a\") });\n      perDay++;\n    }\n    dt = dt.plus({ minutes: interval });\n  }\n}\n\nconst slotsForPrompt = out.length\n  ? out.map((s, i) => '[' + (i + 1) + '] ' + s.label).join('\\n')\n  : '(no open consult times in the next ' + days + ' days, apologize and offer to have the team follow up)';\n\n// Assemble the intake-form context the agent personalizes from (plain text, no n8n braces).\nconst lc = [];\nif (inb.name) lc.push('Name: ' + inb.name);\nif (inb.leadCase) lc.push('What they want (their words): ' + inb.leadCase);\nif (inb.preferredDate) lc.push('Preferred consult date: ' + inb.preferredDate);\nconst leadContext = lc.length ? lc.join('\\n') : '(no intake form on file, ask what treatment they are interested in)';\n\n// Booked lead — the funnel already booked this person via the landing-page slot picker. Pass a\n// plain-language note through to the agent and NEVER show them a times list in this state, so\n// there is nothing tempting the agent to re-offer or re-collect.\nconst booked = inb.booked === true;\nconst bookedLabel = String(inb.bookedLabel || '').trim();\nconst bookedContext = booked\n  ? ('This person already has a consult booked for ' + (bookedLabel || 'the time they already picked') + '. Do not offer any consult times and do not collect qualifying info.')\n  : '';\nconst finalSlotsForPrompt = booked ? '(the lead already has a consult booked, do not offer any times)' : slotsForPrompt;\nconst finalAwaitingPick = booked ? false : awaitingPick;\n\n// Opening rule for the agent, decided deterministically upstream (Parse Inbound) so the model\n// never has to guess whether this person was already greeted — a funnel kick-off text, an\n// earlier turn, or a completed booking all count as greeted.\nconst allowGreeting = inb.allowGreeting === true;\nlet greetingRule;\nif (booked) {\n  greetingRule = 'This person is past intake (their consult is already booked). NEVER open with a greeting. Do not start your reply with Hi, Hey, Hello, or with their name. Answer warmly and directly per the ALREADY BOOKED rules.';\n} else if (allowGreeting) {\n  greetingRule = 'This is your first reply to this person and nobody from the firm has texted them yet. Open with a short greeting by their first name if you know it (for example \"Hi Jose,\"), then continue per your rules.';\n} else if (inb.seeded && inb.turn === 1) {\n  greetingRule = 'This person was ALREADY greeted in an earlier text from the firm, and their latest message may be answering a question the firm already asked them by text. NEVER open with a greeting. Do not start your reply with Hi, Hey, Hello, or with their name. Briefly acknowledge what they just told you, then ask the single most important must-have still missing, or offer consult times if nothing is missing.';\n} else {\n  greetingRule = 'You are mid-conversation and this person was already greeted. NEVER open with a greeting. Do not start your reply with Hi, Hey, Hello, or with their name. Acknowledge what they just said and continue: the next missing must-have, offering times, or their chosen time, per your other rules.';\n}\n\nreturn [{ json: {\n  phone: inb.phone, text: inb.text, name: inb.name, sid: inb.sid, sessionKey: inb.sessionKey,\n  slots: out, slotsForPrompt: finalSlotsForPrompt, awaitingPick: finalAwaitingPick, leadContext,\n  booked, bookedContext, allowGreeting, greetingRule\n} }];"
+      }
+    },
+    {
+      "id": "i08-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1500,
+        460
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Code: Parse Inbound').item.json.text }}",
+        "hasOutputParser": false,
+        "options": {
+          "systemMessage": "=You are the AI intake assistant for Glow Aesthetics Med Spa, a medical spa. Your ONLY job is to (1) qualify inbound leads against the spa's criteria and (2) once qualified, help them pick a consultation time. You are not a medical professional and you are not the spa's representative.\n\nALREADY BOOKED, check this first, before anything else below: {{ $json.bookedContext }}\nIf the note on that line is not empty, this person has ALREADY finished intake and already has a consult booked. Do NOT greet them as a brand new contact, do NOT qualify them again, do NOT ask any qualifying questions, and do NOT offer or discuss consult times, even if they ask for a different time (tell them to reply here and the team will help with that). Simply reply warmly and briefly, confirming you have them down for that time, and let them know they can reply here to reschedule or with any question before then. This is logistics only, the compliance rules below still apply in full, still no medical advice. Set status to booked in your output. If the note on that line is empty, ignore this whole section and continue with the normal flow below.\n\nThis is an ongoing WhatsApp text conversation and you can see the earlier messages. The person's name (from their intake form or WhatsApp) is: {{ $json.name }}. If that is blank, you do not know their name yet.\n\nWHAT THEY ALREADY TOLD US (from the intake form they just submitted on the website; treat every item here as ALREADY KNOWN and NEVER ask for it again):\n{{ $json.leadContext }}\n\nOPENING RULE FOR THIS REPLY (decided by our system; follow it exactly): {{ $json.greetingRule }}\n\nGreetings are strictly limited: the person is greeted at most ONCE in the whole exchange, and any earlier text the spa already sent them counts as that one greeting. When the opening rule says not to greet, your reply must not start with Hi, Hey, Hello, or with their name. Never invent a name; if you greet and do not know their name, greet warmly without one. Beyond a permitted greeting, do not repeat their name in every message. On your first reply, acknowledge their SPECIFIC interest from the form in a few words (for example the Botox they asked about or their laser hair removal question); if the form already satisfies every must-have, skip straight to offering consult times.\n\nSERVICES OFFERED: Botox and dermal fillers, laser hair removal, HydraFacial, chemical peels, microneedling, body contouring\nQUALIFYING CRITERIA (the spa's must-haves): interested in a treatment the spa offers; 18 or older; not describing a medical emergency or an active complication from a prior procedure; able to come in for an in-person consultation\n\nHARD COMPLIANCE RULES (never violate):\n- You QUALIFY and SCHEDULE only.\n- NEVER give medical advice of any kind.\n- NEVER assess, state, or imply whether a treatment is safe, suitable, or right for this person; only the licensed provider decides that, at the consultation.\n- NEVER diagnose any condition or interpret symptoms.\n- NEVER guarantee or imply any treatment result.\n- NEVER make promises or representations on behalf of Glow Aesthetics Med Spa, including prices, discounts, or a specific provider.\n- Do NOT state or imply that a provider-patient relationship exists; it does not.\n- If the person asks a medical question, for example is this safe for me, or will this fix my scarring, politely decline and steer them to the consultation. Example tone: I can't give medical advice, but the provider can cover that during your consult.\n\nGATHERING INFO (status collecting):\n- Ask for ONE missing must-have at a time (which treatment or concern they are interested in, that they are 18 or older when their message puts age in doubt, roughly when they want to come in).\n- Do NOT ask about their medical history, medications, allergies, or conditions. The provider covers all of that at the consult.\n- Track what they have already told you, INCLUDING the intake-form details above, and NEVER re-ask something already answered or already provided. Move to the next missing item and vary your wording.\n- If the latest message is exactly \"(the lead sent a non-text message)\", treat it as no content: stay in collecting and warmly ask them to describe in a text what treatment they are interested in.\n\nDECLINING (status declined): if the request clearly is not a service the spa offers, the person says they are under 18, or they describe a medical emergency or an active complication from a prior procedure (kindly tell them to contact their provider or seek medical care right away), decline politely with no medical reasons and no advice.\n\nOFFERING TIMES (status ready_to_book): once the request fits and every must-have is satisfied, tell them they look like a great fit and OFFER two or three specific open times from the OPEN TIMES list below, in plain language grouped by day. For example: \"Great, I have Tuesday at 10:00 AM or 1:30 PM, or Wednesday at 9:00 AM. What works best?\". Prefer times near any day they mentioned. Do NOT show the bracket numbers to the person and do NOT make them reply with a number.\n\nCHANGING THE DAY: if they ask for a different day or time (\"what about Friday?\", \"anything in the afternoon?\", \"later next week?\"), offer matching open times from the OPEN TIMES list. If nothing is open on a day they want, say so and offer the nearest alternatives.\n\nBOOKING (status booking): when the person clearly chooses one of the open times by time, day, or phrase (\"the 1:30 one\", \"Tuesday afternoon\", \"the first one\"), set chosen_slot_index to the bracket number of that exact entry in the OPEN TIMES list. Only choose times that appear in the list, and only after you have offered times.\n\nSTYLE: warm, plain English, concise (about 160 characters). Text the way a friendly human does. Do NOT use a hyphen, an en dash, or an em dash anywhere in your reply; use commas, periods, or separate sentences instead. No markdown, no emoji spam, no links. When unsure between qualified and collecting, choose collecting. Never fabricate facts the person did not provide.\n\nOPEN TIMES (real availability; internal reference, present these naturally and NEVER show the bracket numbers to the person):\n{{ $json.slotsForPrompt }}\n\nOUTPUT: Respond with ONLY a single minified JSON object and nothing else. No markdown, no code fences, no text before or after it. It must contain exactly four keys: reply (the message to send the person, following the STYLE rules above), status (one of: collecting, declined, ready_to_book, booking, booked; use booked whenever the ALREADY BOOKED note above was not empty), chosen_slot_index (the bracket number of the chosen open time when status is booking, otherwise 0), and case_summary (a short factual one-line summary of what they are interested in for our internal scheduling note, for example \"Interested in Botox for forehead lines, first visit, prefers weekday afternoons\"; based ONLY on what they have told you across the whole conversation; never medical advice and never any comment on treatment suitability or outcome; use an empty string if you do not know yet). reply is always required and the entire response must be valid, parseable JSON."
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "i09-model",
+      "name": "Anthropic Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1380,
+        700
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-haiku-4-5-20251001",
+          "cachedResultName": "claude-haiku-4-5-20251001"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "REPLACE_ANTHROPIC_CRED",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "id": "i10-mem",
+      "name": "Window Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1540,
+        700
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code: Parse Inbound').item.json.sessionKey }}",
+        "contextWindowLength": 16
+      }
+    },
+    {
+      "id": "i12-route",
+      "name": "Code: Route",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        460
+      ],
+      "parameters": {
+        "jsCode": "const inb = $('Code: Parse Inbound').item.json;\nconst built = $('Code: Build Slots').item.json;\n\n// Defensive: the structured parser normally gives an object at $json.output. Fall back to\n// parsing a JSON string, or extracting the first JSON object from raw text.\nlet out = $json.output;\nif (typeof out === 'string') { try { out = JSON.parse(out); } catch (e) { out = null; } }\nif (!out || typeof out !== 'object') {\n  const raw = (typeof $json.output === 'string') ? $json.output : ($json.text || '');\n  const m = raw && raw.match(/\\{[\\s\\S]*\\}/);\n  if (m) { try { out = JSON.parse(m[0]); } catch (e) {} }\n}\nout = out || {};\n\nconst status = String(out.status || 'collecting');\nconst agentReply = String(out.reply || '').trim();\n// Case note for the calendar event: prefer the agent's running summary (form + chat detail),\n// fall back to the intake-form case text so the booking always records the person's situation.\nconst caseSummary = String(out.case_summary || '').trim() || String(inb.leadCase || '').trim();\nconst slots = Array.isArray(built.slots) ? built.slots : [];\nconst awaiting = built.awaitingPick === true; // qualified + we already offered times\n\n// Deterministic booked guard — read from Build Slots/Parse Inbound (the session's own record),\n// never trust the model alone. Once a lead is booked, NEVER book or offer again no matter what\n// status the model returns; a model mistake here must not re-book or re-offer.\nconst alreadyBooked = built.booked === true || inb.booked === true;\n\nlet mode = 'reply', reply = agentReply, chosen_iso = '', chosen_label = '';\nlet newOffered = [], newAwaiting = false;\nconst bookedAckReply = \"You're all set, I already have you booked in. Reply here anytime if you need to reschedule or have a question before then.\";\n\nif (alreadyBooked) {\n  reply = agentReply || bookedAckReply;\n} else if (status === 'booked') {\n  // Defensive fallback: the model reported booked even though our own session record does not.\n  // Still never book or offer here, just reply; the session record is what actually decides it.\n  reply = agentReply || bookedAckReply;\n} else if (status === 'booking' && awaiting) {\n  // Map the bracket number against the SAME set the lead was offered (Build Slots pinned\n  // built.slots to the stored offered set while awaiting).\n  const idx = parseInt(out.chosen_slot_index, 10);\n  if (!isNaN(idx) && idx >= 1 && idx <= slots.length) {\n    mode = 'book'; chosen_iso = slots[idx - 1].iso; chosen_label = slots[idx - 1].label;\n  } else {\n    reply = agentReply || \"Sorry, which of those times works best for you?\";\n    newOffered = slots; newAwaiting = slots.length > 0;\n  }\n} else if (status === 'booking' && !awaiting) {\n  // Deterministic gate: never book before we have actually offered times.\n  reply = agentReply || \"Let's get a couple of details first. What treatment are you interested in?\";\n} else if (status === 'ready_to_book') {\n  // The agent has offered specific times conversationally in its reply; just pin the set.\n  reply = agentReply || \"You look like a fit! What day and time work best for you?\";\n  newOffered = slots; newAwaiting = slots.length > 0;\n} else if (status === 'declined') {\n  reply = agentReply || \"Thanks for reaching out, this isn't something we offer.\";\n} else {\n  // collecting. If the lead was mid-pick, PRESERVE the pinned offer so an incidental question\n  // (or a non-text message forced to collecting) doesn't drop the times they were shown.\n  reply = agentReply || \"Could you tell me a bit more about what you're interested in?\";\n  if (awaiting && slots.length) { newOffered = slots; newAwaiting = true; }\n}\n\n// HARD GUARD: greet at most once. When greeting is not allowed on this turn (someone already\n// greeted this person, or we are past turn 1), strip any leading salutation the model still\n// emitted and re-capitalize what remains. Deterministic — never trusts the model on this.\nif (built.allowGreeting !== true && reply) {\n  const g = reply.match(/^\\s*(hi|hey|hello|hiya|howdy|good\\s+(morning|afternoon|evening))\\b[^.!?,]{0,40}?[.!?,]+\\s*/i);\n  if (g) {\n    const rest = reply.slice(g[0].length).trim();\n    if (rest.length >= 2) reply = rest.charAt(0).toUpperCase() + rest.slice(1);\n  }\n}\n\nreturn [{ json: {\n  phone: inb.phone, name: inb.name, sid: inb.sid,\n  mode, reply, chosen_iso, chosen_label, case_summary: caseSummary,\n  offeredJson: JSON.stringify(newOffered), awaitingPick: newAwaiting\n} }];"
+      }
+    },
+    {
+      "id": "i13-book",
+      "name": "If: Book?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        460
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0",
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "book",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "i14-compose",
+      "name": "Code: Compose Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const inb = $('Code: Parse Inbound').item.json;\nconst r = $('Code: Route').item.json;\nconst esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst twiml = \"<Response><Message>\" + esc(r.reply || \"Thanks, could you tell me a bit more?\") + \"</Message></Response>\";\nlet offered = [];\ntry { offered = JSON.parse(r.offeredJson || '[]'); } catch (e) { offered = []; }\nconst store = $getWorkflowStaticData('global');\nstore.sessions = store.sessions || {};\nstore.sessions[inb.phone] = Object.assign({}, store.sessions[inb.phone] || {}, {\n  lastSid: inb.sid, lastTwiml: twiml, lastActivity: Date.now(),\n  offered: offered, awaitingPick: r.awaitingPick === true\n});\nreturn [{ json: { twiml } }];"
+      }
+    },
+    {
+      "id": "i15-bookwin",
+      "name": "Code: Book Window",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        560
+      ],
+      "parameters": {
+        "jsCode": "const r = $('Code: Route').item.json;\nconst tz = \"America/New_York\";\nconst duration = 30;\nconst parsed = DateTime.fromISO(r.chosen_iso || \"\", { zone: tz });\nconst valid = parsed.isValid;\nconst s = valid ? parsed : DateTime.now().setZone(tz);\nconst startISO = s.toISO();\nconst endISO = s.plus({ minutes: duration }).toISO();\nreturn [{ json: { timeMin: startISO, timeMax: endISO, startISO, endISO, human: r.chosen_label || s.toFormat(\"cccc, LLL d 'at' h:mm a\"), valid } }];"
+      }
+    },
+    {
+      "id": "i16-check",
+      "name": "Google Calendar: Check Slot",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        2420,
+        560
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "josemor1669@gmail.com"
+        },
+        "returnAll": true,
+        "options": {
+          "timeMin": "={{ $json.timeMin }}",
+          "timeMax": "={{ $json.timeMax }}",
+          "singleEvents": true
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_GCAL_CRED",
+          "name": "Google Calendar account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "i17-verify",
+      "name": "Code: Verify Free",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        560
+      ],
+      "parameters": {
+        "jsCode": "const tz = \"America/New_York\";\nconst bw = $('Code: Book Window').item.json;\nconst start = DateTime.fromISO(bw.startISO, { zone: tz });\nconst end = DateTime.fromISO(bw.endISO, { zone: tz });\nconst events = $input.all().map(i => i.json).filter(Boolean);\nlet free = bw.valid !== false && start > DateTime.now().setZone(tz); // must be valid AND in the future\nfor (const ev of events) {\n  if (!ev || ev.status === 'cancelled' || ev.transparency === 'transparent') continue;\n  const s = ev.start && (ev.start.dateTime || ev.start.date);\n  const e = ev.end && (ev.end.dateTime || ev.end.date);\n  if (!s || !e) continue;\n  if (start < DateTime.fromISO(e, { zone: tz }) && end > DateTime.fromISO(s, { zone: tz })) { free = false; break; }\n}\nreturn [{ json: { free, startISO: bw.startISO, endISO: bw.endISO, human: bw.human } }];"
+      }
+    },
+    {
+      "id": "i18-free",
+      "name": "If: Slot Free?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        560
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c0",
+              "leftValue": "={{ $json.free ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "i19-create",
+      "name": "Google Calendar: Book Consult",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        3080,
+        640
+      ],
+      "parameters": {
+        "operation": "create",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "josemor1669@gmail.com"
+        },
+        "start": "={{ $('Code: Verify Free').item.json.startISO }}",
+        "end": "={{ $('Code: Verify Free').item.json.endISO }}",
+        "additionalFields": {
+          "timezone": "America/New_York",
+          "summary": "=Med Spa Consult — {{ $('Code: Parse Inbound').item.json.name || $('Code: Parse Inbound').item.json.phone }}",
+          "description": "=AI-booked med spa intake consult (WhatsApp). | Lead: {{ $('Code: Parse Inbound').item.json.name }} | Phone: {{ $('Code: Parse Inbound').item.json.phone }} | Interest: {{ $('Code: Route').item.json.case_summary || $('Code: Parse Inbound').item.json.leadCase || $('Code: Parse Inbound').item.json.text }} | COMPLIANCE: AI qualified & scheduled only — no medical advice given, no treatment suitability or outcome assessed."
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_GCAL_CRED",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "i20-confirm",
+      "name": "Code: Confirm TwiML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        640
+      ],
+      "parameters": {
+        "jsCode": "const inb = $('Code: Parse Inbound').item.json;\nconst vf = $('Code: Verify Free').item.json;\nconst firm = \"Glow Aesthetics Med Spa\";\nconst first = (inb.name || \"\").trim().split(/\\s+/)[0];\nconst reply = (first ? \"Thanks \" + first + \"! \" : \"Thanks! \") +\n  \"Your free consult with \" + firm + \" is booked for \" + vf.human + \". See you then!\";\nconst esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst twiml = \"<Response><Message>\" + esc(reply) + \"</Message></Response>\";\nconst store = $getWorkflowStaticData('global');\nstore.sessions = store.sessions || {};\n// Mark this conversation booked (mirrors the funnel's booked-seed path) so a later \"thanks\"\n// after the agent's window memory has rolled off is handled as booked, not re-qualified.\nstore.sessions[inb.phone] = Object.assign({}, store.sessions[inb.phone] || {}, {\n  lastSid: inb.sid, lastTwiml: twiml, lastActivity: Date.now(), offered: [], awaitingPick: false,\n  booked: true, bookedLabel: vf.human\n});\nreturn [{ json: { twiml } }];"
+      }
+    },
+    {
+      "id": "i21-taken",
+      "name": "Code: Taken TwiML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        460
+      ],
+      "parameters": {
+        "jsCode": "const inb = $('Code: Parse Inbound').item.json;\n// The slot the lead picked was taken between the offer and now. Reset so the next message\n// pulls fresh availability (we do not re-show the stale set that included the taken slot).\nconst reply = \"Sorry, that time was just taken. Reply with anything and I'll pull fresh times.\";\nconst esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst twiml = \"<Response><Message>\" + esc(reply) + \"</Message></Response>\";\nconst store = $getWorkflowStaticData('global');\nstore.sessions = store.sessions || {};\nstore.sessions[inb.phone] = Object.assign({}, store.sessions[inb.phone] || {}, {\n  lastSid: inb.sid, lastTwiml: twiml, lastActivity: Date.now(), offered: [], awaitingPick: false\n});\nreturn [{ json: { twiml } }];"
+      }
+    },
+    {
+      "id": "i22-respond",
+      "name": "Respond: Reply",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3560,
+        380
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.twiml }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "content-type",
+                "value": "text/xml"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Inbound Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code: Parse Inbound",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Parse Inbound": {
+      "main": [
+        [
+          {
+            "node": "If: Seed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Seed?": {
+      "main": [
+        [
+          {
+            "node": "Code: Seed Ack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If: Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Seed Ack": {
+      "main": [
+        [
+          {
+            "node": "Respond: Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Duplicate?": {
+      "main": [
+        [
+          {
+            "node": "Code: Echo Dedup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code: Availability Window",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Echo Dedup": {
+      "main": [
+        [
+          {
+            "node": "Respond: Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Availability Window": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar: Get Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar: Get Availability": {
+      "main": [
+        [
+          {
+            "node": "Code: Build Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Build Slots": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code: Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Route": {
+      "main": [
+        [
+          {
+            "node": "If: Book?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Book?": {
+      "main": [
+        [
+          {
+            "node": "Code: Book Window",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code: Compose Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Compose Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond: Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Book Window": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar: Check Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar: Check Slot": {
+      "main": [
+        [
+          {
+            "node": "Code: Verify Free",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Verify Free": {
+      "main": [
+        [
+          {
+            "node": "If: Slot Free?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Slot Free?": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar: Book Consult",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code: Taken TwiML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar: Book Consult": {
+      "main": [
+        [
+          {
+            "node": "Code: Confirm TwiML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Confirm TwiML": {
+      "main": [
+        [
+          {
+            "node": "Respond: Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Taken TwiML": {
+      "main": [
+        [
+          {
+            "node": "Respond: Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templatecredsSetupCompleted": false,
+    "instanceId": "medspa-intake-funnel-builder"
+  }
+}

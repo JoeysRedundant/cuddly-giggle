@@ -1,0 +1,1031 @@
+[
+  {
+    "name": "IQ Real Estate, LLC",
+    "phone": "(786) 530-9371",
+    "website": "http://www.iqrealestatellc.com/",
+    "address": "1925 Brickell Ave Ste D205, Miami, FL 33129",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 46,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "UNREACHABLE",
+    "verification_evidence": "no page could be loaded",
+    "pages_checked": 0
+  },
+  {
+    "name": "The World Realty",
+    "phone": "(305) 760-9121",
+    "website": "https://www.aleksandramarzec.com/",
+    "address": "1221 Brickell Ave, Miami, FL 33131",
+    "category": "Real estate agent",
+    "rating": 5,
+    "reviews": 32,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "Aleksandra Marzec"
+    ],
+    "owner": "Aleksandra Marzec",
+    "email": "alek@aleksandrateam.com",
+    "all_emails": [
+      "alek@aleksandrateam.com",
+      "legal@aleksandrateam.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://www.aleksandramarzec.com",
+    "pages_checked": 6
+  },
+  {
+    "name": "LG Realty Group Inc. Miami Luxury Real Estate",
+    "phone": "(305) 890-6226",
+    "website": "https://www.lgrealtygroup.com/",
+    "address": "3250 NE 1st Ave Unit 305, Miami, FL 33137",
+    "category": "Real estate agency",
+    "rating": 4.9,
+    "reviews": 33,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "UNREACHABLE",
+    "verification_evidence": "no page could be loaded",
+    "pages_checked": 0
+  },
+  {
+    "name": "Miami Real Estate | Chic Living Miami \u2013 Maria Rosales, REALTOR\u00ae for Luxury Homes & Investments",
+    "phone": "(305) 915-7607",
+    "website": "http://www.chiclivingmiami.com/",
+    "address": "78 SW 7th St Apt 800, Miami, FL 33130",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 19,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "Maria Rosales",
+      "Property Managment"
+    ],
+    "owner": "Maria Rosales; Property Managment",
+    "email": "mrosales@chiclivingmiami.com",
+    "all_emails": [
+      "ENENESBRFRZHDERUITEMAILmrosales@chiclivingmiami.comPHONE",
+      "mrosales@chiclivingmiami.com",
+      "testlg@idxboost.com",
+      "EMAILinfo@chiclivingmiami.comPHONE",
+      "info@chiclivingmiami.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://www.chiclivingmiami.com",
+    "pages_checked": 5
+  },
+  {
+    "name": "Pilar Lecha - EXP Luxury",
+    "phone": "(305) 713-7107",
+    "website": "https://www.pilarlecha.com/",
+    "address": "1000 Brickell Ave, Miami, FL 33132",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 92,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "pilar.lecha@exprealty.com",
+    "all_emails": [
+      "pilar.lecha@exprealty.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://www.pilarlecha.com",
+    "pages_checked": 6
+  },
+  {
+    "name": "Luxury Living International, Inc..",
+    "phone": "(305) 889-8400",
+    "website": "https://luxurylivinginternational.io/?utm_source=gbp&utm_medium=organic",
+    "address": "80 SW 8th St Ste 2000-A, Miami, FL 33130",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 6,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "UNREACHABLE",
+    "verification_evidence": "no page could be loaded",
+    "pages_checked": 0
+  },
+  {
+    "name": "Fortune International Group",
+    "phone": "(305) 351-1000",
+    "website": "http://www.fortuneintlgroup.com/",
+    "address": "1300 Brickell Ave, Miami, FL 33131",
+    "category": "Real estate agency",
+    "rating": 4.1,
+    "reviews": 51,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "Buyer Subscribe",
+      "Development Sales Born",
+      "Edgardo Defortuna"
+    ],
+    "owner": "Buyer Subscribe; Development Sales Born; Edgardo Defortuna",
+    "email": "fortune@fortuneintlgroup.com",
+    "all_emails": [
+      "fortune@fortuneintlgroup.com",
+      "BRICKELL1300@FIR.COM",
+      "BRICKELL1390@FIR.COM",
+      "BRICKELL2666@FIR.COM",
+      "ICONBRICKELL@FIR.COM"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "text match on https://fortuneintlgroup.com/contact",
+    "pages_checked": 4
+  },
+  {
+    "name": "Miami Realty Solution Group",
+    "phone": "(305) 728-0840",
+    "website": "http://miamirealtysolution.com/",
+    "address": "90 SW 3rd St CU3, Miami, FL 33130",
+    "category": "Real estate agency",
+    "rating": 4.8,
+    "reviews": 212,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "Juan Acuna Caro",
+      "Tania Rodriguez",
+      "Anastasia Benedeti"
+    ],
+    "owner": "Juan Acuna Caro; Tania Rodriguez; Anastasia Benedeti",
+    "email": "jayroy@miamirealtysolution.com",
+    "all_emails": [
+      "anastasia@abrealestatefl.com",
+      "anastasiacontact17@gmail.com",
+      "antonioamagaldi@gmail.com",
+      "bgrealestatemiami@gmail.com",
+      "jayroy@miamirealtysolution.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://miamirealtysolution.com",
+    "pages_checked": 4
+  },
+  {
+    "name": "Milton Andrade, REALTOR - Compass",
+    "phone": "(785) 530-3942",
+    "website": "http://www.polarisadvisorsgroup.com/",
+    "address": "1655 SW 18th St, Miami, FL 33145",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 53,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "Giuseppe Mastrolonardo Real",
+      "Milton Andrade",
+      "Giuseppe Mastrolonardo"
+    ],
+    "owner": "Giuseppe Mastrolonardo Real; Milton Andrade; Giuseppe Mastrolonardo",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "NOT_FOUND",
+    "verification_evidence": "site reached, number not present",
+    "pages_checked": 4
+  },
+  {
+    "name": "Ecaterina (Katerina) Morosan - EXP Realty",
+    "phone": "(929) 444-8802",
+    "website": "http://teamdom50.com/",
+    "address": "80 SW 8th St Ste 2000 fl, Miami, FL 33130",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 12,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "South Florida",
+      "Explore Neighborhoods",
+      "Direct Inquiry"
+    ],
+    "owner": "South Florida; Explore Neighborhoods; Direct Inquiry",
+    "email": "katerina@teamdom50.com",
+    "all_emails": [
+      "katerina@teamdom50.com",
+      "info@teamdom50.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://teamdom50.com",
+    "pages_checked": 3
+  },
+  {
+    "name": "Lauren Hershey - CRR REALTY",
+    "phone": "(708) 539-9319",
+    "website": "https://www.laurenhershey.com/",
+    "address": "1200 Brickell Ave Ste 700, Miami, FL 33130",
+    "category": "Real estate agency",
+    "rating": 4.8,
+    "reviews": 44,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "laurenhersheyrealtor@gmail.com",
+    "all_emails": [
+      "laurenhersheyrealtor@gmail.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://www.laurenhershey.com",
+    "pages_checked": 4
+  },
+  {
+    "name": "Globalty Investment",
+    "phone": "(561) 945-4345",
+    "website": "https://www.globaltyinvestment.com/",
+    "address": "78 SW 7th St Apt 800, Miami, FL 33130",
+    "category": "Real estate agency",
+    "rating": 4.9,
+    "reviews": 22,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "Thomas Pichet",
+      "Broker Nicolas Coudene",
+      "Associate Shelby Pichet"
+    ],
+    "owner": "Thomas Pichet; Broker Nicolas Coudene; Associate Shelby Pichet",
+    "email": "tpichet@globaltyinvestment.com",
+    "all_emails": [
+      "tpichet@globaltyinvestment.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "text match on https://www.globaltyinvestment.com",
+    "pages_checked": 4
+  },
+  {
+    "name": "EXCLUSIVE PREMIER REALTY",
+    "phone": "(800) 288-5791",
+    "website": "http://www.exclusivepremierrealty.com/",
+    "address": "1250 SW 27th Ave #301, Miami, FL 33135",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 13,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "Broker Alexander Virelles",
+      "Felipe Bossans",
+      "Eunice Gibson Hudson"
+    ],
+    "owner": "Broker Alexander Virelles; Felipe Bossans; Eunice Gibson Hudson",
+    "email": "alex@exclusivepremierrealty.com",
+    "all_emails": [
+      "alex@exclusivepremierrealty.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://www.exclusivepremierrealty.com",
+    "pages_checked": 5
+  },
+  {
+    "name": "LUXE Properties",
+    "phone": "(305) 438-7764",
+    "website": "http://liveluxehomes.com/",
+    "address": "55 Merrick Wy Suite 402, Coral Gables, FL 33134",
+    "category": "Real estate agency",
+    "rating": 4.6,
+    "reviews": 158,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "UNREACHABLE",
+    "verification_evidence": "no page could be loaded",
+    "pages_checked": 0
+  },
+  {
+    "name": "Luxe Residences",
+    "phone": "(786) 799-1139",
+    "website": "https://luxeresidences.net/",
+    "address": "1221 Brickell Ave Suite 900, Miami, FL 33131",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 3,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "Luxe Residences"
+    ],
+    "owner": "Luxe Residences",
+    "email": "Arius.valentino@luxeresidences.net",
+    "all_emails": [
+      "Arius.valentino@luxeresidences.net"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://luxeresidences.net/contact",
+    "pages_checked": 4
+  },
+  {
+    "name": "Abner Realty",
+    "phone": "(305) 222-7513",
+    "website": "http://www.abnerglobal.com/",
+    "address": "690 SW 1st Ct, Miami, FL 33130",
+    "category": "Real estate agency",
+    "rating": 4.9,
+    "reviews": 79,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "NOT_FOUND",
+    "verification_evidence": "site reached, number not present",
+    "pages_checked": 1
+  },
+  {
+    "name": "Jose Fuentes Real Estate Broker Fortune Christie's International",
+    "phone": "(786) 439-6764",
+    "website": "https://beacons.ai/mrdreammaker_",
+    "address": "1390 Brickell Ave #104, Miami, FL 33131",
+    "category": "Real estate agency",
+    "rating": 4.9,
+    "reviews": 67,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "UNREACHABLE",
+    "verification_evidence": "no page could be loaded",
+    "pages_checked": 0
+  },
+  {
+    "name": "Belhouse Real Estate LLC.",
+    "phone": "(305) 921-9789",
+    "website": "http://www.belhousere.com/",
+    "address": "Infinity at Brickell, 40 SW 13th St Ste 701, Miami, FL 33130",
+    "category": "Real estate agency",
+    "rating": 4.7,
+    "reviews": 28,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "USA Sandra Destenave",
+      "USA Gabriella Bevilacqua",
+      "USA Luz Stella"
+    ],
+    "owner": "USA Sandra Destenave; USA Gabriella Bevilacqua; USA Luz Stella",
+    "email": "info@belhousere.com",
+    "all_emails": [
+      "info@belhousere.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://www.belhousere.com",
+    "pages_checked": 4
+  },
+  {
+    "name": "David Freed Realtor | Miami Is Home | Keller Williams Realty",
+    "phone": "(954) 263-8115",
+    "website": "https://miamishome.com/?utm_source=gbp&utm_medium=organic",
+    "address": "45 SW 9th St Apt 3006, Miami, FL 33130",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 147,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "David Freed"
+    ],
+    "owner": "David Freed",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://miamishome.com/?utm_source=gbp&utm_medium=organic",
+    "pages_checked": 4
+  },
+  {
+    "name": "Luxury Real Estate | Miami | Jenny Gonzalez",
+    "phone": "(786) 486-1617",
+    "website": "https://www.jennygonzalezre.com/",
+    "address": "625 Brickell Key Dr, Miami, FL 33131",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 1,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "jennygonzalezre@gmail.com",
+    "all_emails": [
+      "jennygonzalezre@gmail.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://www.jennygonzalezre.com",
+    "pages_checked": 4
+  },
+  {
+    "name": "Blackbook Properties",
+    "phone": "(786) 400-2296",
+    "website": "https://www.condoblackbook.com/",
+    "address": "1900 N Bayshore Dr Suite 1A #103, Miami, FL 33132",
+    "category": "Real estate agency",
+    "rating": 4.9,
+    "reviews": 227,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "Stephanie Bienstock",
+      "Roberta Feldman"
+    ],
+    "owner": "Stephanie Bienstock; Roberta Feldman",
+    "email": "contact@CondoBlackBook.com",
+    "all_emails": [
+      "contact@CondoBlackBook.com",
+      "sep@blackbookproperties.com",
+      "stephanie@blackbookproperties.com",
+      "evan@blackbookproperties.com",
+      "jessica@blackbookproperties.com"
+    ],
+    "phone_verified": "NOT_FOUND",
+    "verification_evidence": "site reached, number not present",
+    "pages_checked": 4
+  },
+  {
+    "name": "Miami Luxury Residences",
+    "phone": "(305) 874-9500",
+    "website": "http://www.miamiluxuryresidences.com/",
+    "address": "333 NE 24th St, Miami, FL 33137",
+    "category": "Real estate agency",
+    "rating": 4.8,
+    "reviews": 37,
+    "location_searched": "Miami, FL",
+    "owners": [
+      "Ory Pelyo",
+      "Associate Fortune Christie\u2019s"
+    ],
+    "owner": "Ory Pelyo; Associate Fortune Christie\u2019s",
+    "email": "ory@miamiluxuryresidences.com",
+    "all_emails": [
+      "ory@miamiluxuryresidences.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://www.miamiluxuryresidences.com",
+    "pages_checked": 4
+  },
+  {
+    "name": "KENTIS REALTY",
+    "phone": "(786) 431-6050",
+    "website": "https://www.kentisrealty.com/",
+    "address": "777 Brickell Ave #500, Miami, FL 33131",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 42,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "dimitrios@kentisrealty.com",
+    "all_emails": [
+      "dimitrios@kentisrealty.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://www.kentisrealty.com",
+    "pages_checked": 5
+  },
+  {
+    "name": "Gomez Realty Group",
+    "phone": "(305) 305-5678",
+    "website": "https://www.gomezrealtygroup.com/",
+    "address": "1900 N Bayshore Dr, Miami, FL 33132",
+    "category": "Real estate agency",
+    "rating": 4.8,
+    "reviews": 24,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "info@gomezrealtygroup.com",
+    "all_emails": [
+      "info@gomezrealtygroup.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://www.gomezrealtygroup.com",
+    "pages_checked": 1
+  },
+  {
+    "name": "KRE + ASSOCIATES",
+    "phone": "(310) 729-2470",
+    "website": "https://kleinlistings.com/",
+    "address": "17266 Palisades Cir, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 5,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Laura Klein",
+      "For Sellers",
+      "For Buyers"
+    ],
+    "owner": "Laura Klein; For Sellers; For Buyers",
+    "email": "Team@KleinListings.com",
+    "all_emails": [
+      "Team@KleinListings.com",
+      "Laura@Kleinlistings.com",
+      "Tracy@Kleinlistings.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://kleinlistings.com",
+    "pages_checked": 4
+  },
+  {
+    "name": "Amalfi Estates",
+    "phone": "(310) 573-4245",
+    "website": "http://amalfiestates.com/",
+    "address": "984 Monument St #105, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": 4.9,
+    "reviews": 121,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Anthony Margulus",
+      "Anthony Marguleas",
+      "Amalfi Estates"
+    ],
+    "owner": "Anthony Margulus; Anthony Marguleas; Amalfi Estates",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://amalfiestates.com",
+    "pages_checked": 6
+  },
+  {
+    "name": "The McNichol Bernbach Group - Best Realtors",
+    "phone": "(424) 835-1470",
+    "website": "http://devinandaaron.com/",
+    "address": "839 V\u00eda De La Paz, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 64,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Let's Talk",
+      "Devin McNichol",
+      "Aaron Bernbach"
+    ],
+    "owner": "Let's Talk; Devin McNichol; Aaron Bernbach",
+    "email": "info@DevinAndAaron.com",
+    "all_emails": [
+      "info@DevinAndAaron.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://devinandaaron.com",
+    "pages_checked": 6
+  },
+  {
+    "name": "The Cilic Group",
+    "phone": "(310) 925-1402",
+    "website": "https://ourpacificpalisades.com/?utm_source=gbp&utm_medium=organic",
+    "address": "15140 Sunset Blvd, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 31,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Weekly October",
+      "Joe Cilic",
+      "Featured Properties"
+    ],
+    "owner": "Weekly October; Joe Cilic; Featured Properties",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://ourpacificpalisades.com/?utm_source=gbp&utm_medium=organic",
+    "pages_checked": 5
+  },
+  {
+    "name": "Jancula Group",
+    "phone": "(310) 740-9719",
+    "website": "http://janculagroup.com/",
+    "address": "829 1/2 V\u00eda De La Paz, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 29,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Picks Up Blufftop"
+    ],
+    "owner": "Picks Up Blufftop",
+    "email": "info@janculagroup.com",
+    "all_emails": [
+      "info@janculagroup.com",
+      "ryan@janculagroup.com",
+      "angela@janculagroup.com",
+      "sarah@janculagroup.com",
+      "victoria@janculagroup.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://janculagroup.com",
+    "pages_checked": 4
+  },
+  {
+    "name": "Nuhaus",
+    "phone": "(310) 633-1469",
+    "website": "https://teamnuhaus.com/?utm_source=gbp&utm_medium=organic",
+    "address": "15207 Sunset Blvd suite a, Pacific Palisades, CA 90272",
+    "category": "Real estate consultant",
+    "rating": 5,
+    "reviews": 24,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Featured Neighborhoods",
+      "Pacific Palisades",
+      "Thank You"
+    ],
+    "owner": "Featured Neighborhoods; Pacific Palisades; Thank You",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://teamnuhaus.com/?utm_source=gbp&utm_medium=organic",
+    "pages_checked": 3
+  },
+  {
+    "name": "Belle Tsai",
+    "phone": "(310) 738-7118",
+    "website": "http://www.westla-realestate.com/",
+    "address": "15140 Sunset Blvd, Pacific Palisades, CA 90272",
+    "category": "Real estate agent",
+    "rating": 5,
+    "reviews": 30,
+    "location_searched": "Los Angeles, CA",
+    "owners": [],
+    "owner": "",
+    "email": "bellejtsai@gmail.com",
+    "all_emails": [
+      "bellejtsai@gmail.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://www.westla-realestate.com",
+    "pages_checked": 3
+  },
+  {
+    "name": "Ryan Jancula",
+    "phone": "(310) 740-9719",
+    "website": "http://www.janculagroup.com/",
+    "address": "829 1/2 V\u00eda De La Paz, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 6,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Picks Up Blufftop"
+    ],
+    "owner": "Picks Up Blufftop",
+    "email": "info@janculagroup.com",
+    "all_emails": [
+      "info@janculagroup.com",
+      "ryan@janculagroup.com",
+      "angela@janculagroup.com",
+      "sarah@janculagroup.com",
+      "victoria@janculagroup.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://www.janculagroup.com",
+    "pages_checked": 6
+  },
+  {
+    "name": "Robert Radcliffe - The Radcliffe Group - Sotheby's International Realty",
+    "phone": "(310) 317-9900",
+    "website": "https://www.robertradcliffe.com/",
+    "address": "15140 Sunset Blvd, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 6,
+    "location_searched": "Los Angeles, CA",
+    "owners": [],
+    "owner": "",
+    "email": "rob@robertradcliffe.com",
+    "all_emails": [
+      "rob@robertradcliffe.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://www.robertradcliffe.com/contact",
+    "pages_checked": 3
+  },
+  {
+    "name": "Antola Properties Group",
+    "phone": "(310) 595-5181",
+    "website": "https://www.antolaproperties.com/",
+    "address": "839 V\u00eda De La Paz, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 9,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Monica Antola",
+      "Monica Iris Antola"
+    ],
+    "owner": "Monica Antola; Monica Iris Antola",
+    "email": "info@antolaproperties.com",
+    "all_emails": [
+      "info@antolaproperties.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://www.antolaproperties.com",
+    "pages_checked": 5
+  },
+  {
+    "name": "Luxury 1 Agency",
+    "phone": "(888) 217-4448",
+    "website": "https://luxury1agency.com/",
+    "address": "18726 S Western Ave #406, Gardena, CA 90248",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 8,
+    "location_searched": "Los Angeles, CA",
+    "owners": [],
+    "owner": "",
+    "email": "jimbecker123@gmail.com",
+    "all_emails": [
+      "jimbecker123@gmail.com",
+      "karinkmalka@gmail.com",
+      "Robin.danby@gmail.com",
+      "Marziaaron@hotmail.com",
+      "pouranpouran@sbcglobal.net"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://luxury1agency.com",
+    "pages_checked": 5
+  },
+  {
+    "name": "Don & Michelle Greene, REALTORS | The Greene Team | Sotheby's International Realty",
+    "phone": "(310) 403-0634",
+    "website": "https://www.greeneteamla.com/",
+    "address": "15140 Sunset Blvd, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 22,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Featured Properties",
+      "Explore California Neighborhoods",
+      "Santa Monica"
+    ],
+    "owner": "Featured Properties; Explore California Neighborhoods; Santa Monica",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://www.greeneteamla.com",
+    "pages_checked": 4
+  },
+  {
+    "name": "Margaux Glaser",
+    "phone": "(310) 600-7116",
+    "website": "https://margauxglaser.com/?utm_source=gbp&utm_medium=organic",
+    "address": "15207 Sunset Blvd suite a, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 10,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Margaux Glaser",
+      "Work With Margaux",
+      "Exploring Financing Options"
+    ],
+    "owner": "Margaux Glaser; Work With Margaux; Exploring Financing Options",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://margauxglaser.com/?utm_source=gbp&utm_medium=organic",
+    "pages_checked": 5
+  },
+  {
+    "name": "Sotheby's International Realty",
+    "phone": "(310) 454-0080",
+    "website": "https://www.sothebysrealty.com/eng/office/180-b-1201-34/sothebys-international-realty-pacific-palisades-brokerage?mp_agent=745-a-df24020619301011812",
+    "address": "15140 Sunset Blvd, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": 5,
+    "reviews": 1,
+    "location_searched": "Los Angeles, CA",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "UNREACHABLE",
+    "verification_evidence": "no page could be loaded",
+    "pages_checked": 0
+  },
+  {
+    "name": "Dan Urbach",
+    "phone": "(310) 367-9865",
+    "website": "http://danurbach.com/",
+    "address": "15207 Sunset Blvd suite a, Pacific Palisades, CA 90272",
+    "category": "Real estate agent",
+    "rating": 4.6,
+    "reviews": 9,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Dan Urbach"
+    ],
+    "owner": "Dan Urbach",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on http://danurbach.com",
+    "pages_checked": 2
+  },
+  {
+    "name": "Lexie Brew | Compass",
+    "phone": "(310) 804-9081",
+    "website": "http://lexiebrew.com/",
+    "address": "15207 Sunset Blvd suite a, Pacific Palisades, CA 90272",
+    "category": "Real estate agent",
+    "rating": 5,
+    "reviews": 1,
+    "location_searched": "Los Angeles, CA",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "UNREACHABLE",
+    "verification_evidence": "no page could be loaded",
+    "pages_checked": 0
+  },
+  {
+    "name": "Sandefer Homes",
+    "phone": "(310) 889-8463",
+    "website": "https://sandeferhomes.com/",
+    "address": "1017 N Swarthmore Ave, Pacific Palisades, CA 90272",
+    "category": "Real estate agent",
+    "rating": null,
+    "reviews": null,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Ca Dre",
+      "Rob Sandefer",
+      "Sara Sandefer"
+    ],
+    "owner": "Ca Dre; Rob Sandefer; Sara Sandefer",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://sandeferhomes.com",
+    "pages_checked": 3
+  },
+  {
+    "name": "Marni Galef",
+    "phone": "(310) 418-1445",
+    "website": "http://marnigalef.bhhscalifornia.com/",
+    "address": "881 Alma Real Dr #100, Pacific Palisades, CA 90272",
+    "category": "Real estate agent",
+    "rating": null,
+    "reviews": null,
+    "location_searched": "Los Angeles, CA",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "UNREACHABLE",
+    "verification_evidence": "no page could be loaded",
+    "pages_checked": 0
+  },
+  {
+    "name": "Laura Brau Estates",
+    "phone": "(310) 650-4156",
+    "website": "https://laurabrauestates.com/?utm_source=gbp&utm_medium=organic",
+    "address": "15207 Sunset Blvd, Pacific Palisades, CA 90272",
+    "category": "Real estate agency",
+    "rating": null,
+    "reviews": null,
+    "location_searched": "Los Angeles, CA",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "tel: link on https://laurabrauestates.com/?utm_source=gbp&utm_medium=organic",
+    "pages_checked": 1
+  },
+  {
+    "name": "Cabo La Estancia, Luxury Villa Rentals",
+    "phone": "(310) 573-9400",
+    "website": "https://cabolaestancia.com/",
+    "address": "1423 Floresta Pl, Pacific Palisades, CA 90272",
+    "category": "Travel agency",
+    "rating": 4.2,
+    "reviews": 14,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "John Ramer"
+    ],
+    "owner": "John Ramer",
+    "email": "stay@cabolaestancia.com",
+    "all_emails": [
+      "stay@cabolaestancia.com",
+      "concierge@cabolaestancia.com"
+    ],
+    "phone_verified": "VERIFIED",
+    "verification_evidence": "text match on https://cabolaestancia.com/contact",
+    "pages_checked": 4
+  },
+  {
+    "name": "Elena\u200b \u200bAkinshina - Russian Speaking Realtor Los Angeles, Santa Monica - \u0420\u0438\u0435\u043b\u0442\u043e\u0440 \u0432 \u041b\u043e\u0441-\u0410\u043d\u0434\u0436\u0435\u043b\u0435\u0441\u0435, \u041a\u0430\u043b\u0438\u0444\u043e\u0440\u043d\u0438\u0438",
+    "phone": "(949) 202-8497",
+    "website": "https://www.roomvu.com/agent/elena-akinshina",
+    "address": null,
+    "category": "Real estate agency",
+    "rating": 4.8,
+    "reviews": 23,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Demo Session If",
+      "Avanti Way Miami",
+      "Weekly Views"
+    ],
+    "owner": "Demo Session If; Avanti Way Miami; Weekly Views",
+    "email": "ERealtor4@gmail.com",
+    "all_emails": [
+      "ERealtor4@gmail.com"
+    ],
+    "phone_verified": "NOT_FOUND",
+    "verification_evidence": "site reached, number not present",
+    "pages_checked": 3
+  },
+  {
+    "name": "The Brothers M - Cornerstone Home Lending NMLS #1145071",
+    "phone": "(310) 405-0301",
+    "website": "https://www.houseloan.com/brothersm/",
+    "address": "139 Ocean Ave Ext #1, Santa Monica, CA 90402",
+    "category": "Mortgage broker",
+    "rating": 5,
+    "reviews": 143,
+    "location_searched": "Los Angeles, CA",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "NOT_FOUND",
+    "verification_evidence": "site reached, number not present",
+    "pages_checked": 2
+  },
+  {
+    "name": "Ocean Palms and Palisades",
+    "phone": "(424) 587-0498",
+    "website": "https://www.rentsfnow.com/building/950-4th-street/",
+    "address": "1470 Palisades Dr, Pacific Palisades, CA 90272",
+    "category": "Apartment complex",
+    "rating": 2.5,
+    "reviews": 4,
+    "location_searched": "Los Angeles, CA",
+    "owners": [
+      "Resident Testimonials"
+    ],
+    "owner": "Resident Testimonials",
+    "email": "insidesales@rentsfnow.com",
+    "all_emails": [
+      "insidesales@rentsfnow.com"
+    ],
+    "phone_verified": "NOT_FOUND",
+    "verification_evidence": "site reached, number not present",
+    "pages_checked": 4
+  },
+  {
+    "name": "John Scott - John L. Scott Real Estate",
+    "phone": "(323) 509-9905",
+    "website": "http://johnlscottbroker.com/",
+    "address": null,
+    "category": "Real estate agency",
+    "rating": 4,
+    "reviews": 1,
+    "location_searched": "Los Angeles, CA",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "NOT_FOUND",
+    "verification_evidence": "site reached, number not present",
+    "pages_checked": 5
+  },
+  {
+    "name": "South Beach Real Estate",
+    "phone": "(305) 562-7363",
+    "website": null,
+    "address": "901 S Miami Ave, Miami, FL 33130",
+    "category": "Real estate agency",
+    "rating": 4.4,
+    "reviews": 5,
+    "location_searched": "Miami, FL",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "NO_WEBSITE",
+    "verification_evidence": "",
+    "pages_checked": 0
+  },
+  {
+    "name": "101 Ocean Avenue",
+    "phone": "(310) 459-0692",
+    "website": null,
+    "address": "101 Ocean Ave, Santa Monica, CA 90402",
+    "category": "Condominium complex",
+    "rating": 4.8,
+    "reviews": 33,
+    "location_searched": "Los Angeles, CA",
+    "owners": [],
+    "owner": "",
+    "email": "",
+    "all_emails": [],
+    "phone_verified": "NO_WEBSITE",
+    "verification_evidence": "",
+    "pages_checked": 0
+  }
+]

@@ -1,0 +1,1071 @@
+{
+  "name": "Med Spa Intake Funnel — Glow Aesthetics Med Spa",
+  "nodes": [
+    {
+      "id": "n01-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        180,
+        400
+      ],
+      "webhookId": "medspa-intake-webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "medspa-intake",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      }
+    },
+    {
+      "id": "n02-normalize",
+      "name": "Set: Normalize Lead",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "name",
+              "type": "string",
+              "value": "={{ $json.body.name || $json.body.full_name || $json.body.fullname || '' }}"
+            },
+            {
+              "id": "a2",
+              "name": "phone",
+              "type": "string",
+              "value": "={{ (() => { const r = ($json.body.phone || $json.body.phone_number || $json.body.tel || '').toString().trim(); if (!r) return ''; if (r.charAt(0) === '+') return '+' + r.slice(1).replace(/\\D/g, ''); const d = r.replace(/\\D/g, ''); if (d.length === 10) return '+1' + d; if (d.length === 11 && d.charAt(0) === '1') return '+' + d; return '+' + d; })() }}"
+            },
+            {
+              "id": "a3",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $json.body.email || $json.body.email_address || '' }}"
+            },
+            {
+              "id": "a4",
+              "name": "treatment_interest",
+              "type": "string",
+              "value": "={{ $json.body.treatment_interest || $json.body.message || $json.body.details || $json.body.what_happened || '' }}"
+            },
+            {
+              "id": "a5",
+              "name": "source",
+              "type": "string",
+              "value": "={{ $json.body.source || 'web-form' }}"
+            },
+            {
+              "id": "a6",
+              "name": "receivedAt",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "id": "a7",
+              "name": "action",
+              "type": "string",
+              "value": "={{ $json.body.action || 'qualify' }}"
+            },
+            {
+              "id": "a8",
+              "name": "preferred_date",
+              "type": "string",
+              "value": "={{ $json.body.preferred_date || '' }}"
+            },
+            {
+              "id": "a9",
+              "name": "chosen_slot",
+              "type": "string",
+              "value": "={{ $json.body.chosen_slot || '' }}"
+            },
+            {
+              "id": "a10",
+              "name": "silent",
+              "type": "boolean",
+              "value": "={{ $json.body.silent === true || $json.body.silent === 'true' }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n03-if-action",
+      "name": "If: Booking Step?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        600,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "book",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n04-aiconfig",
+      "name": "Set: AI Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        820,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "system_prompt",
+              "type": "string",
+              "value": "You are an AI intake assistant for Glow Aesthetics Med Spa, a medical spa. Your ONLY job is to (1) qualify inbound leads against the spa's criteria and (2) tee qualified leads up to choose a consultation time. You are not a medical professional and you are not the spa's representative.\n\nSERVICES OFFERED: Botox and dermal fillers, laser hair removal, HydraFacial, chemical peels, microneedling, body contouring\nQUALIFYING CRITERIA (the spa's must-haves): interested in a treatment the spa offers; 18 or older; not describing a medical emergency or an active complication from a prior procedure; able to come in for an in-person consultation\n\n=== HARD COMPLIANCE RULES (never violate) ===\n- You QUALIFY ONLY.\n- NEVER give medical advice of any kind.\n- NEVER assess, state, or imply whether a treatment is safe, suitable, or right for this person; only the licensed provider decides that, at the consultation.\n- NEVER diagnose any condition or interpret symptoms.\n- NEVER guarantee or imply any treatment result.\n- NEVER make promises or representations on behalf of Glow Aesthetics Med Spa, including prices, discounts, or availability of a specific provider.\n- Do NOT state or imply that a provider-patient relationship exists; it does not.\n- If the lead asks a medical question (\"is Botox safe for me\", \"will this fix my scarring\"), the sms_reply must politely decline to give medical advice and steer them to the consultation. Example tone: \"I can't give medical advice, but the provider can cover that during your consult.\"\n\n=== INPUT ===\nYou receive the lead's submitted info as fields: name, phone, email, treatment_interest.\n\n=== DECISION MODEL (choose EXACTLY ONE status) ===\n1. \"declined\": the lead is clearly NOT a fit. Use when ANY hard disqualifier is true:\n   - The request is not a service the spa offers (e.g. dentistry, surgery, primary care, prescriptions unrelated to the offered services).\n   - The lead states they are under 18.\n   - The lead is describing a medical emergency or an active complication from a prior procedure. Kindly tell them to contact their provider or seek medical care right away; give no advice beyond that.\n   - The lead is plainly only seeking free medical advice with no interest in a visit.\n   Reply politely and briefly; give no medical reasons and no advice.\n2. \"needs_info\": the request plausibly fits an offered service, but at least one MUST-HAVE is simply unknown/missing (not failed). Must-haves: which treatment or concern they are interested in; that they are 18 or older when their message puts age in doubt; roughly when they want to come in. Do NOT ask about their medical history, medications, or conditions; the provider covers that at the consult. ALSO use this when treatment_interest is empty, blank, or gibberish. Ask for the SINGLE most important missing item only.\n3. \"qualified\": the request fits a SERVICE the spa offers, NO hard disqualifier is present, AND every must-have is known and satisfied.\n\nBe robust to messy, informal, or partial input. NEVER fabricate facts the lead did not provide. When unsure between qualified and needs_info, choose needs_info and ask for the missing item.\n\n=== SMS RULES ===\n- GREETING: This is the FIRST message the lead receives, so open by greeting them by their FIRST name from the submitted info (for example \"Hi Maria,\"). Greet only this once. NEVER invent, guess, or assume a name; if the name field is blank, greet warmly without one.\n- WRITING STYLE: Text the way a friendly human does. Do NOT use a hyphen, an en dash, or an em dash anywhere in the message; use commas, periods, or separate sentences instead.\n- Friendly, warm, plain-English, concise (aim ~160 characters; never long). No markdown, no emoji spam, no links unless provided to you.\n- qualified: a short, warm line telling them they look like a great fit and to pick a time below to lock in their free consult. Do NOT state a specific time or say it is already booked. Example: \"Good news, we'd love to see you! Pick a time below and we'll lock in your free consult with Glow Aesthetics Med Spa.\"\n- needs_info: ask the SINGLE most important missing question, warmly. Never list multiple questions. Never give medical advice.\n- declined: be kind and brief; thank them and let them know this is not something the spa offers (or, for an emergency/complication, that they should contact their provider or seek care), without giving medical advice or reasons that resemble advice. Do not promise a callback.\n\n=== OUTPUT (STRICT) ===\nRespond with ONLY a single minified JSON object. No markdown, no code fences, no prose before or after. Exactly these keys:\n{\"qualified\":boolean,\"status\":\"qualified|needs_info|declined\",\"reason\":\"short internal-only explanation\",\"missing_info\":[\"...\"],\"sms_reply\":\"the message to text or show the lead\"}\n\nRules for output:\n- \"status\": exactly one of \"qualified\", \"needs_info\", \"declined\".\n- \"qualified\": boolean; it MUST be true if and only if status is \"qualified\".\n- \"reason\": brief internal note for the spa (not sent to the lead). Never contains medical advice.\n- \"missing_info\": array of strings, the must-haves still unknown. Use an empty array [] for qualified or declined.\n- \"sms_reply\": the message per SMS RULES above. Always present, for every status.\n- Output must be valid, parseable JSON. No trailing commas, no comments, no text outside the JSON object."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n25-seedbot",
+      "name": "HTTP: Seed Bot Context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        440
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://josesn8n.win/webhook/medspa-inbound",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ seed: true, phone: $('Set: Normalize Lead').item.json.phone, name: $('Set: Normalize Lead').item.json.name, treatment_interest: $('Set: Normalize Lead').item.json.treatment_interest, preferred_date: $('Set: Normalize Lead').item.json.preferred_date, greeted: (true && $('Set: Normalize Lead').item.json.silent !== true) }) }}",
+        "options": {
+          "timeout": 8000
+        }
+      }
+    },
+    {
+      "id": "Code: Prepare Request",
+      "name": "Code: Prepare Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        200
+      ],
+      "parameters": {
+        "jsCode": "const lead = $('Set: Normalize Lead').item.json;\nconst system = $('Set: AI Config').item.json.system_prompt;\nconst userMessage =\n  \"New lead submitted:\\n\" +\n  \"Name: \" + (lead.name || \"(none)\") + \"\\n\" +\n  \"Phone: \" + (lead.phone || \"(none)\") + \"\\n\" +\n  \"Email: \" + (lead.email || \"(none)\") + \"\\n\" +\n  \"Treatment interest: \" + (lead.treatment_interest || \"(none)\");\nreturn [{ json: { system, userMessage } }];\n"
+      }
+    },
+    {
+      "id": "n06-claude",
+      "name": "HTTP: Claude Qualify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1260,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 512, system: $json.system, messages: [ { role: 'user', content: $json.userMessage } ] }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ANTHROPIC_CRED",
+          "name": "Anthropic API (x-api-key header)"
+        }
+      }
+    },
+    {
+      "id": "Code: Parse AI JSON",
+      "name": "Code: Parse AI JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        200
+      ],
+      "parameters": {
+        "jsCode": "let raw = \"\";\ntry { raw = $json.content[0].text || \"\"; } catch (e) { raw = \"\"; }\n\nlet parsed = null;\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  const m = raw.match(/\\{[\\s\\S]*\\}/);\n  if (m) { try { parsed = JSON.parse(m[0]); } catch (e2) { parsed = null; } }\n}\n\nif (!parsed || (typeof parsed.qualified === \"undefined\" && typeof parsed.status === \"undefined\")) {\n  parsed = {\n    qualified: false,\n    status: \"needs_info\",\n    reason: \"AI response was unparseable; defaulted to follow-up.\",\n    missing_info: [\"incident details\"],\n    sms_reply: \"Thanks for reaching out! Could you share a few details about the treatment you're interested in, so we can help?\"\n  };\n}\n\nconst allowed = [\"qualified\", \"needs_info\", \"declined\"];\nlet status = String(parsed.status || \"\").toLowerCase().trim();\nif (!allowed.includes(status)) {\n  status = parsed.qualified === true ? \"qualified\" : \"needs_info\";\n}\nconst qualified = status === \"qualified\";\n\nreturn [{ json: {\n  qualified: qualified,\n  status: status,\n  reason: String(parsed.reason || \"\"),\n  missing_info: Array.isArray(parsed.missing_info) ? parsed.missing_info : [],\n  sms_reply: String(parsed.sms_reply || \"Thanks for reaching out — a team member will follow up shortly.\")\n} }];\n"
+      }
+    },
+    {
+      "id": "n08-if-qual",
+      "name": "If: Qualified?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.qualified }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "Code: Availability Window",
+      "name": "Code: Availability Window",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        100
+      ],
+      "parameters": {
+        "jsCode": "const lead = $('Set: Normalize Lead').item.json;\nconst tz = \"America/New_York\";\nconst days = 14;\nconst now = DateTime.now().setZone(tz);\nlet pref = null;\nif (lead.preferred_date) {\n  const p = DateTime.fromISO(lead.preferred_date, { zone: tz });\n  if (p.isValid) pref = p.startOf('day');\n}\nconst startDt = (pref && pref > now) ? pref : now;\nconst timeMin = startDt.toISO();\nconst timeMax = startDt.plus({ days: days }).endOf('day').toISO();\nreturn [{ json: { timeMin, timeMax } }];\n"
+      }
+    },
+    {
+      "id": "Google Calendar: Get Availability",
+      "name": "Google Calendar: Get Availability",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        2140,
+        100
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "josemor1669@gmail.com"
+        },
+        "returnAll": true,
+        "options": {
+          "timeMin": "={{ $json.timeMin }}",
+          "timeMax": "={{ $json.timeMax }}",
+          "singleEvents": true
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_GCAL_CRED",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "Code: Build Slots",
+      "name": "Code: Build Slots",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2360,
+        100
+      ],
+      "parameters": {
+        "jsCode": "const lead = $('Set: Normalize Lead').item.json;\nconst ai = $('Code: Parse AI JSON').item.json;\nconst tz = \"America/New_York\";\nconst startHour = 9;\nconst endHour = 17;\nconst duration = 30;\nconst interval = 30;\nconst slotsToShow = 6;\nconst days = 14;\n\nconst events = $input.all().map(i => i.json).filter(Boolean);\nconst busy = [];\nfor (const ev of events) {\n  if (!ev || ev.status === 'cancelled' || ev.transparency === 'transparent') continue;\n  const s = ev.start && (ev.start.dateTime || ev.start.date);\n  const e = ev.end && (ev.end.dateTime || ev.end.date);\n  if (!s || !e) continue;\n  busy.push([DateTime.fromISO(s, { zone: tz }), DateTime.fromISO(e, { zone: tz })]);\n}\nfunction overlaps(s, e) { return busy.some(([bs, be]) => s < be && e > bs); }\n\nconst now = DateTime.now().setZone(tz).plus({ minutes: 60 });\nlet pref = null;\nif (lead.preferred_date) {\n  const p = DateTime.fromISO(lead.preferred_date, { zone: tz });\n  if (p.isValid) pref = p.startOf('day');\n}\nlet dt = (pref && pref > now) ? pref : now;\ndt = dt.set({ minute: 0, second: 0, millisecond: 0 });\n\nconst out = [];\nconst limit = dt.plus({ days: days });\nlet guard = 0;\nwhile (out.length < slotsToShow && dt < limit && guard < 8000) {\n  guard++;\n  if (dt.weekday > 5) { dt = dt.plus({ days: 1 }).set({ hour: startHour, minute: 0, second: 0, millisecond: 0 }); continue; }\n  if (dt.hour < startHour) { dt = dt.set({ hour: startHour, minute: 0, second: 0, millisecond: 0 }); }\n  const dayEnd = dt.set({ hour: endHour, minute: 0, second: 0, millisecond: 0 });\n  if (dt.plus({ minutes: duration }) > dayEnd) { dt = dt.plus({ days: 1 }).set({ hour: startHour, minute: 0, second: 0, millisecond: 0 }); continue; }\n  if (dt < now) { dt = dt.plus({ minutes: interval }); continue; }\n  const slotEnd = dt.plus({ minutes: duration });\n  if (!overlaps(dt, slotEnd)) out.push({ iso: dt.toISO(), label: dt.toFormat(\"cccc, LLL d 'at' h:mm a\") });\n  dt = dt.plus({ minutes: interval });\n}\n\nreturn [{ json: { qualified: ai.qualified, status: ai.status, sms_reply: ai.sms_reply, reason: ai.reason, slots: out } }];\n"
+      }
+    },
+    {
+      "id": "Respond: Slots",
+      "name": "Respond: Slots",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        100
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'ok', qualified: true, verdict: $('Code: Parse AI JSON').item.json.status, sms_reply: $('Code: Parse AI JSON').item.json.sms_reply, slots: $('Code: Build Slots').item.json.slots }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "n26-if-silent-qualify",
+      "name": "If: Silent? (qualify)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Set: Normalize Lead').item.json.silent }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "Twilio: Confirm Qualify SMS",
+      "name": "Twilio: Confirm Qualify SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "onError": "continueRegularOutput",
+      "position": [
+        2620,
+        200
+      ],
+      "parameters": {
+        "from": "+17372583742",
+        "to": "={{ $('Set: Normalize Lead').item.json.phone }}",
+        "message": "={{ $('Code: Parse AI JSON').item.json.sms_reply }}",
+        "toWhatsapp": true,
+        "options": {}
+      },
+      "credentials": {
+        "twilioApi": {
+          "id": "REPLACE_TWILIO_CRED",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "id": "n15-if-silent-needs",
+      "name": "If: Silent? (needs)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        360
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Set: Normalize Lead').item.json.silent }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "Twilio: Follow-up SMS",
+      "name": "Twilio: Follow-up SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "onError": "continueRegularOutput",
+      "position": [
+        2140,
+        280
+      ],
+      "parameters": {
+        "from": "+17372583742",
+        "to": "={{ $('Set: Normalize Lead').item.json.phone }}",
+        "message": "={{ $('Code: Parse AI JSON').item.json.sms_reply }}",
+        "toWhatsapp": true,
+        "options": {}
+      },
+      "credentials": {
+        "twilioApi": {
+          "id": "REPLACE_TWILIO_CRED",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "id": "Respond: Not Qualified",
+      "name": "Respond: Not Qualified",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        360
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'ok', qualified: false, verdict: $('Code: Parse AI JSON').item.json.status, sms_reply: $('Code: Parse AI JSON').item.json.sms_reply, slots: [] }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "Code: Book Window",
+      "name": "Code: Book Window",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        620
+      ],
+      "parameters": {
+        "jsCode": "const lead = $('Set: Normalize Lead').item.json;\nconst tz = \"America/New_York\";\nconst duration = 30;\nconst parsed = DateTime.fromISO(lead.chosen_slot || \"\", { zone: tz });\nconst valid = parsed.isValid;\nconst s = valid ? parsed : DateTime.now().setZone(tz);\nconst startISO = s.toISO();\nconst endISO = s.plus({ minutes: duration }).toISO();\nreturn [{ json: { timeMin: startISO, timeMax: endISO, startISO, endISO, human: s.toFormat(\"cccc, LLL d 'at' h:mm a\"), valid } }];\n"
+      }
+    },
+    {
+      "id": "Google Calendar: Check Slot",
+      "name": "Google Calendar: Check Slot",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        620
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "josemor1669@gmail.com"
+        },
+        "returnAll": true,
+        "options": {
+          "timeMin": "={{ $json.timeMin }}",
+          "timeMax": "={{ $json.timeMax }}",
+          "singleEvents": true
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_GCAL_CRED",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "Code: Verify Free",
+      "name": "Code: Verify Free",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        620
+      ],
+      "parameters": {
+        "jsCode": "const tz = \"America/New_York\";\nconst bw = $('Code: Book Window').item.json;\nconst start = DateTime.fromISO(bw.startISO, { zone: tz });\nconst end = DateTime.fromISO(bw.endISO, { zone: tz });\nconst events = $input.all().map(i => i.json).filter(Boolean);\nlet free = bw.valid !== false;\nfor (const ev of events) {\n  if (!ev || ev.status === 'cancelled' || ev.transparency === 'transparent') continue;\n  const s = ev.start && (ev.start.dateTime || ev.start.date);\n  const e = ev.end && (ev.end.dateTime || ev.end.date);\n  if (!s || !e) continue;\n  const bs = DateTime.fromISO(s, { zone: tz });\n  const be = DateTime.fromISO(e, { zone: tz });\n  if (start < be && end > bs) { free = false; break; }\n}\nreturn [{ json: { free, startISO: bw.startISO, endISO: bw.endISO, human: bw.human } }];\n"
+      }
+    },
+    {
+      "id": "n20-if-free",
+      "name": "If: Slot Free?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        620
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.free }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n21-book",
+      "name": "Google Calendar: Book Consult",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1700,
+        540
+      ],
+      "parameters": {
+        "operation": "create",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "josemor1669@gmail.com"
+        },
+        "start": "={{ $('Code: Verify Free').item.json.startISO }}",
+        "end": "={{ $('Code: Verify Free').item.json.endISO }}",
+        "additionalFields": {
+          "timezone": "America/New_York",
+          "summary": "=Med Spa Consult — {{ $('Set: Normalize Lead').item.json.name }}",
+          "description": "=AI-booked med spa intake consult. | Lead: {{ $('Set: Normalize Lead').item.json.name }} | Phone: {{ $('Set: Normalize Lead').item.json.phone }} | Email: {{ $('Set: Normalize Lead').item.json.email }} | Interest (lead's words): {{ $('Set: Normalize Lead').item.json.treatment_interest }} | COMPLIANCE: AI qualified & scheduled only — no medical advice given, no treatment suitability or outcome assessed."
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_GCAL_CRED",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "id": "Code: Confirm Message",
+      "name": "Code: Confirm Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        540
+      ],
+      "parameters": {
+        "jsCode": "const lead = $('Set: Normalize Lead').item.json;\nconst vf = $('Code: Verify Free').item.json;\nconst firm = \"Glow Aesthetics Med Spa\";\nconst first = (lead.name || \"\").trim().split(/\\s+/)[0] || \"there\";\nconst sms = \"Thanks \" + first + \"! Your free consult with \" + firm + \" is booked for \" + vf.human + \". See you then!\";\nreturn [{ json: { sms_reply: sms, human: vf.human } }];\n"
+      }
+    },
+    {
+      "id": "n27-notifybooked",
+      "name": "HTTP: Notify Bot Booked",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2140,
+        700
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "https://josesn8n.win/webhook/medspa-inbound",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ seed: true, booked: true, phone: $('Set: Normalize Lead').item.json.phone, name: $('Set: Normalize Lead').item.json.name, treatment_interest: $('Set: Normalize Lead').item.json.treatment_interest, booked_label: $('Code: Confirm Message').item.json.human, booked_iso: $('Code: Verify Free').item.json.startISO }) }}",
+        "options": {
+          "timeout": 8000
+        }
+      }
+    },
+    {
+      "id": "n23-if-silent-book",
+      "name": "If: Silent? (book)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2140,
+        540
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Set: Normalize Lead').item.json.silent }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "Twilio: Confirm Booking SMS",
+      "name": "Twilio: Confirm Booking SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "onError": "continueRegularOutput",
+      "position": [
+        2360,
+        460
+      ],
+      "parameters": {
+        "from": "+17372583742",
+        "to": "={{ $('Set: Normalize Lead').item.json.phone }}",
+        "message": "={{ $('Code: Confirm Message').item.json.sms_reply }}",
+        "toWhatsapp": true,
+        "options": {}
+      },
+      "credentials": {
+        "twilioApi": {
+          "id": "REPLACE_TWILIO_CRED",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "id": "Respond: Booked",
+      "name": "Respond: Booked",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        540
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'ok', booked: true, consult_slot: $('Code: Confirm Message').item.json.human, sms_reply: $('Code: Confirm Message').item.json.sms_reply }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "Respond: Slot Taken",
+      "name": "Respond: Slot Taken",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        760
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'ok', booked: false, reason: 'slot_taken', message: 'That time was just booked — please pick another.' }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "n13-note-compliance",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        120,
+        120
+      ],
+      "parameters": {
+        "content": "## ⛔ COMPLIANCE (non-negotiable)\nThe AI QUALIFIES & SCHEDULES ONLY.\nNever gives medical advice, never assesses treatment suitability or outcomes, never makes representations for Glow Aesthetics Med Spa.\nEnforced in 'Set: AI Config' — do not weaken it.",
+        "height": 200,
+        "width": 380
+      }
+    },
+    {
+      "id": "n14-note-setup",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        -120
+      ],
+      "parameters": {
+        "content": "## Setup — 2-step booking + silent flag (v3.1)\n1. Credentials: Anthropic, Twilio, Google Calendar, Google Sheets.\n2. action=qualify → verdict + open slots; action=book → re-check + book.\n3. silent=true (used by the inbound WhatsApp bot) suppresses this workflow's own Twilio sends so the bot replies instead.\n4. The inbound bot keeps its own conversation memory (in-memory) — no 'Conversations' tab needed.\n5. Logging never blocks the response. CORS pre-set to *.",
+        "height": 260,
+        "width": 520
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set: Normalize Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Normalize Lead": {
+      "main": [
+        [
+          {
+            "node": "If: Booking Step?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Booking Step?": {
+      "main": [
+        [
+          {
+            "node": "Code: Book Window",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set: AI Config",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP: Seed Bot Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: AI Config": {
+      "main": [
+        [
+          {
+            "node": "Code: Prepare Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Prepare Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Claude Qualify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Claude Qualify": {
+      "main": [
+        [
+          {
+            "node": "Code: Parse AI JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Parse AI JSON": {
+      "main": [
+        [
+          {
+            "node": "If: Qualified?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Qualified?": {
+      "main": [
+        [
+          {
+            "node": "Code: Availability Window",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If: Silent? (needs)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Availability Window": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar: Get Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar: Get Availability": {
+      "main": [
+        [
+          {
+            "node": "Code: Build Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Build Slots": {
+      "main": [
+        [
+          {
+            "node": "If: Silent? (qualify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Silent? (qualify)": {
+      "main": [
+        [
+          {
+            "node": "Respond: Slots",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Twilio: Confirm Qualify SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twilio: Confirm Qualify SMS": {
+      "main": [
+        [
+          {
+            "node": "Respond: Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Silent? (needs)": {
+      "main": [
+        [
+          {
+            "node": "Respond: Not Qualified",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Twilio: Follow-up SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twilio: Follow-up SMS": {
+      "main": [
+        [
+          {
+            "node": "Respond: Not Qualified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Book Window": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar: Check Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar: Check Slot": {
+      "main": [
+        [
+          {
+            "node": "Code: Verify Free",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Verify Free": {
+      "main": [
+        [
+          {
+            "node": "If: Slot Free?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Slot Free?": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar: Book Consult",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: Slot Taken",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar: Book Consult": {
+      "main": [
+        [
+          {
+            "node": "Code: Confirm Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Confirm Message": {
+      "main": [
+        [
+          {
+            "node": "If: Silent? (book)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP: Notify Bot Booked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Silent? (book)": {
+      "main": [
+        [
+          {
+            "node": "Respond: Booked",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Twilio: Confirm Booking SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twilio: Confirm Booking SMS": {
+      "main": [
+        [
+          {
+            "node": "Respond: Booked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templatecredsSetupCompleted": false,
+    "instanceId": "medspa-intake-funnel-builder"
+  },
+  "tags": []
+}

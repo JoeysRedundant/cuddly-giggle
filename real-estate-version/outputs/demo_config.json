@@ -1,0 +1,18 @@
+{
+  "agency_name": "Sunrise Realty Group",
+  "agent_calendar_id": "josemor1669@gmail.com",
+  "twilio_from_number": "+17372583742",
+  "messaging_channel": "whatsapp",
+  "funnel_whatsapp_send": true,
+  "timezone": "America/New_York",
+  "business_hours": "Mon–Fri 09:00–17:00",
+  "consult_duration_minutes": 30,
+  "services_offered": "home buying, home selling, rentals & leasing, investment properties",
+  "qualifying_criteria": "clear intent to buy, sell, or lease (not a vendor, job seeker, or recruiter); timeline to transact within about 12 months; target area or property within the markets served; buyers: budget range known or pre-approval started; sellers: owns the property; not under an exclusive agreement with another agent",
+  "log_sheet_id": "",
+  "reschedule_link": "",
+  "cors_origins": "*",
+  "default_dial_code": "1",
+  "claude_model": "claude-haiku-4-5-20251001",
+  "n8n_base_url": "https://josesn8n.win"
+}

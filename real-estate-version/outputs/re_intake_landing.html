@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sunrise Realty Group — Free Buyer &amp; Seller Consult</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     CONFIG — set your webhook URL here.
+     Production (recommended): activate the workflow, then use /webhook/re-intake
+     Test mode: use /webhook-test/re-intake and click "Execute workflow" before each submit
+     ============================================================ */
+  :root{
+    --ink:#10202c;
+    --ink-2:#0b1822;
+    --gold:#c79a4b;
+    --gold-soft:#e3c98a;
+    --cream:#f6f1e7;
+    --cream-2:#efe7d6;
+    --paper:#fbf8f1;
+    --line:#d8cdb4;
+    --muted:#5d6b73;
+    --text:#1c2a32;
+    --ok:#2f7d52;
+    --ok-bg:#e7f2eb;
+    --warn:#9a6a2a;
+    --warn-bg:#f6eeda;
+    --shadow:0 24px 60px -28px rgba(8,20,28,.55);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{
+    font-family:'Archivo',sans-serif;
+    color:var(--text);
+    background:var(--ink);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  /* grain overlay */
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{display:grid;grid-template-columns:1.05fr .95fr;min-height:100vh}
+  @media(max-width:960px){.wrap{grid-template-columns:1fr}}
+
+  /* ---------- LEFT / BRAND PANEL ---------- */
+  .brand-panel{
+    position:relative;
+    background:
+      radial-gradient(120% 90% at 12% 8%, rgba(199,154,75,.18), transparent 55%),
+      radial-gradient(90% 70% at 95% 100%, rgba(199,154,75,.10), transparent 60%),
+      linear-gradient(160deg,var(--ink) 0%, var(--ink-2) 100%);
+    color:var(--cream);
+    padding:clamp(2rem,5vw,4.5rem);
+    display:flex;flex-direction:column;justify-content:space-between;
+    overflow:hidden;
+  }
+  .brand-panel::before{
+    content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+    background-size:46px 46px;mask-image:radial-gradient(100% 80% at 30% 20%,#000,transparent 75%);
+  }
+  .brand-panel > *{position:relative;z-index:1}
+  .wordmark{display:flex;align-items:center;gap:.65rem;letter-spacing:.02em}
+  .seal{
+    width:38px;height:38px;border-radius:50%;border:1.5px solid var(--gold);
+    display:grid;place-items:center;color:var(--gold);font-family:'Fraunces',serif;font-weight:600;font-size:1.05rem;
+    box-shadow:inset 0 0 0 3px rgba(199,154,75,.12);
+  }
+  .wordmark b{font-family:'Fraunces',serif;font-weight:500;font-size:1.18rem;color:var(--cream)}
+  .wordmark span{display:block;font-size:.62rem;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);margin-top:2px}
+
+  .hero{margin:clamp(2.5rem,6vh,5rem) 0}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:.5rem;font-size:.7rem;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--gold);margin-bottom:1.4rem;
+  }
+  .eyebrow::before{content:"";width:28px;height:1px;background:var(--gold)}
+  h1{
+    font-family:'Fraunces',serif;font-weight:400;
+    font-size:clamp(2.4rem,5.2vw,4rem);line-height:1.02;letter-spacing:-.01em;
+    color:#fff;
+  }
+  h1 em{font-style:italic;color:var(--gold-soft)}
+  .lead{
+    margin-top:1.5rem;max-width:34ch;font-size:1.05rem;line-height:1.65;color:rgba(246,241,231,.78);
+  }
+  .badges{display:flex;flex-direction:column;gap:.9rem;margin-top:2.4rem}
+  .badge{display:flex;align-items:center;gap:.85rem;font-size:.95rem;color:rgba(246,241,231,.9)}
+  .badge .tick{
+    flex:none;width:26px;height:26px;border-radius:50%;background:rgba(199,154,75,.15);
+    border:1px solid rgba(199,154,75,.5);display:grid;place-items:center;color:var(--gold);font-size:.8rem;
+  }
+  .footnote{font-size:.78rem;color:rgba(246,241,231,.45);letter-spacing:.02em;line-height:1.6}
+
+  /* ---------- RIGHT / FORM PANEL ---------- */
+  .form-panel{
+    background:var(--cream);
+    background-image:radial-gradient(80% 50% at 100% 0%,rgba(199,154,75,.08),transparent 60%);
+    padding:clamp(2rem,4.5vw,4rem);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .card{
+    width:100%;max-width:460px;background:var(--paper);
+    border:1px solid var(--line);border-radius:6px;
+    box-shadow:var(--shadow);padding:clamp(1.6rem,3.5vw,2.6rem);position:relative;
+  }
+  .card::before{
+    content:"";position:absolute;left:0;right:0;top:0;height:3px;border-radius:6px 6px 0 0;
+    background:linear-gradient(90deg,var(--gold),#a87f33);
+  }
+  .card h2{font-family:'Fraunces',serif;font-weight:500;font-size:1.7rem;letter-spacing:-.01em;color:var(--ink)}
+  .card .sub{margin-top:.4rem;color:var(--muted);font-size:.92rem;line-height:1.55}
+  form{margin-top:1.6rem;display:flex;flex-direction:column;gap:1.05rem}
+  .field label{display:block;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);font-weight:600;margin-bottom:.4rem}
+  .field input,.field textarea{
+    width:100%;font-family:inherit;font-size:.98rem;color:var(--text);
+    background:#fff;border:1px solid var(--line);border-radius:4px;padding:.78rem .85rem;
+    transition:border-color .2s,box-shadow .2s;
+  }
+  .field textarea{resize:vertical;min-height:104px;line-height:1.5}
+  .field input::placeholder,.field textarea::placeholder{color:#a7a394}
+  .field input:focus,.field textarea:focus{
+    outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(199,154,75,.18);
+  }
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:1.05rem}
+  @media(max-width:520px){.row{grid-template-columns:1fr}}
+  button.submit{
+    margin-top:.3rem;font-family:'Archivo',sans-serif;font-weight:600;font-size:1rem;letter-spacing:.02em;
+    color:#fff;background:var(--ink);border:none;border-radius:4px;padding:.95rem 1rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:.6rem;
+    transition:transform .15s,background .2s,box-shadow .2s;
+  }
+  button.submit:hover{background:#16303f;box-shadow:0 12px 28px -14px rgba(16,32,44,.7)}
+  button.submit:active{transform:translateY(1px)}
+  button.submit:disabled{opacity:.65;cursor:wait}
+  .disclaimer{margin-top:.2rem;font-size:.72rem;color:var(--muted);line-height:1.55}
+
+  /* spinner */
+  .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  /* result */
+  .result{display:none;text-align:left;animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+  .result.show{display:block}
+  .form-live.hide{display:none}
+  .result .crest{
+    width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:1.5rem;margin-bottom:1.1rem;
+  }
+  .result.qualified .crest{background:var(--ok-bg);color:var(--ok);border:1px solid #bfe0cd}
+  .result.pending .crest{background:var(--warn-bg);color:var(--warn);border:1px solid #e6d3a7}
+  .result h2{margin-bottom:.5rem}
+  .result .slot{
+    margin:1.1rem 0;padding:.9rem 1rem;border-left:3px solid var(--gold);background:var(--cream-2);border-radius:0 4px 4px 0;
+    font-family:'Fraunces',serif;font-size:1.1rem;color:var(--ink);
+  }
+  .result .sms{
+    margin-top:1.1rem;padding:1rem;background:#0e1f2b;color:#e9f0f3;border-radius:8px;font-size:.92rem;line-height:1.55;position:relative;
+  }
+  .result .sms .tag{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:.45rem}
+  .result .again{margin-top:1.4rem;background:none;border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:.7rem 1rem;font-family:inherit;font-weight:600;cursor:pointer;font-size:.88rem;width:100%}
+  .result .again:hover{background:var(--cream-2)}
+  /* continue-on-WhatsApp CTA */
+  .wa-continue{display:none;align-items:center;justify-content:center;gap:.55rem;margin-top:1.2rem;width:100%;
+    background:#25D366;color:#06321b;border:none;border-radius:6px;padding:.85rem 1rem;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:.95rem;text-decoration:none;cursor:pointer;
+    box-shadow:0 12px 26px -16px rgba(37,211,102,.9);transition:transform .15s,filter .2s}
+  .wa-continue.show{display:flex}
+  .wa-continue:hover{filter:brightness(1.04)}
+  .wa-continue:active{transform:translateY(1px)}
+  .wa-continue svg{width:18px;height:18px;flex:none}
+  .err{display:none;margin-top:1rem;padding:.8rem 1rem;background:#fbe9e7;border:1px solid #f0c4bd;border-radius:4px;color:#9a3328;font-size:.85rem;line-height:1.5}
+  .err.show{display:block}
+
+  /* demo autofill bar */
+  .demo-bar{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:1rem;padding:.6rem .7rem;border:1px dashed var(--line);border-radius:6px;background:rgba(199,154,75,.06)}
+  .demo-tag{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--warn);font-weight:700}
+  .demo-btn{font-family:'Archivo',sans-serif;font-size:.78rem;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:.34rem .7rem;cursor:pointer;transition:background .15s,border-color .15s}
+  .demo-btn:hover{background:var(--cream-2);border-color:var(--gold)}
+  .result.declined .crest{background:#eef1f3;color:#5d6b73;border:1px solid #d8dde1}
+
+  /* step 2 — slot picker */
+  .slots-view{display:none;animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+  .slots-view.show{display:block}
+  .slots-view .crest.ok{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:1.5rem;margin-bottom:1.1rem;background:var(--ok-bg);color:var(--ok);border:1px solid #bfe0cd}
+  .slot-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:1.2rem}
+  @media(max-width:520px){.slot-grid{grid-template-columns:1fr}}
+  .slot-opt{font-family:'Archivo',sans-serif;font-size:.9rem;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:6px;padding:.72rem .6rem;cursor:pointer;text-align:center;transition:background .15s,border-color .15s,transform .1s}
+  .slot-opt:hover{background:var(--cream-2);border-color:var(--gold)}
+  .slot-opt:active{transform:translateY(1px)}
+  .slot-opt:disabled{opacity:.55;cursor:wait}
+  .slot-note{margin-top:1rem;padding:.7rem .9rem;background:var(--warn-bg);border:1px solid #e6d3a7;border-radius:4px;color:var(--warn);font-size:.85rem;line-height:1.5}
+
+  /* staggered entrance */
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  .stg{opacity:0;animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+  .stg.d1{animation-delay:.05s}.stg.d2{animation-delay:.15s}.stg.d3{animation-delay:.25s}
+  .stg.d4{animation-delay:.35s}.stg.d5{animation-delay:.45s}.stg.d6{animation-delay:.55s}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- LEFT : BRAND -->
+  <section class="brand-panel">
+    <div class="wordmark stg d1">
+      <div class="seal">S</div>
+      <div><b>Sunrise Realty Group</b><span>Residential Real Estate</span></div>
+    </div>
+
+    <div class="hero">
+      <span class="eyebrow stg d2">Free Buyer &amp; Seller Consult</span>
+      <h1 class="stg d3">Buying or selling?<br>Get matched with your <em>agent</em><br>in 60 seconds.</h1>
+      <p class="lead stg d4">Tell us what you're looking for. Our team reviews every detail and, if we're a fit, books your free consultation on the spot — before you even close this page.</p>
+
+      <div class="badges stg d5">
+        <div class="badge"><span class="tick">✓</span> Free, no-obligation consultation</div>
+        <div class="badge"><span class="tick">✓</span> Local experts on your side of the deal</div>
+        <div class="badge"><span class="tick">✓</span> A real response in under a minute</div>
+      </div>
+    </div>
+
+    <p class="footnote stg d6">Sunrise Realty Group · Buying · Selling · Rentals · Investment properties<br>Equal Housing Opportunity. Submitting this form does not create an agency or brokerage relationship.</p>
+  </section>
+
+  <!-- RIGHT : FORM -->
+  <section class="form-panel">
+    <div class="card stg d4">
+
+      <div class="form-live">
+        <h2>Start your free consult</h2>
+        <p class="sub">It takes about 30 seconds. The more you tell us about what you're looking for, the faster we can help.</p>
+
+        <div class="demo-bar" id="demoBar">
+          <span class="demo-tag">Demo</span>
+          <button type="button" class="demo-btn" data-demo="qualified">Qualified lead</button>
+          <button type="button" class="demo-btn" data-demo="needs">Needs info</button>
+          <button type="button" class="demo-btn" data-demo="declined">Junk / declined</button>
+        </div>
+
+        <form id="leadForm" novalidate>
+          <div class="row">
+            <div class="field">
+              <label for="name">Full name</label>
+              <input id="name" name="name" type="text" autocomplete="name" placeholder="Jane Doe" required />
+            </div>
+            <div class="field">
+              <label for="phone">Mobile phone</label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="(901) 289-0064" required />
+            </div>
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" placeholder="jane@email.com" required />
+          </div>
+          <div class="field">
+            <label for="inquiry">What are you looking for?</label>
+            <textarea id="inquiry" name="inquiry_description" placeholder="e.g. We're pre-approved and looking for a 3 bedroom house in Riverside under $450k. Hoping to move in the next 3 months. We're not working with an agent yet." required></textarea>
+          </div>
+          <div class="field">
+            <label for="prefdate">Preferred consultation date</label>
+            <input id="prefdate" name="preferred_date" type="date" required />
+          </div>
+          <button class="submit" id="submitBtn" type="submit">
+            <span class="btn-label">Get my free consult</span>
+          </button>
+          <p class="disclaimer">By submitting, you consent to be contacted by text and email about your inquiry. This form provides scheduling and intake only — it does not provide valuations or legal, tax, or lending advice. Equal Housing Opportunity.</p>
+        </form>
+        <div class="err" id="errBox"></div>
+      </div>
+
+      <!-- STEP 2 : SLOT PICKER -->
+      <div class="slots-view" id="slotsView">
+        <div class="crest ok">✓</div>
+        <h2>Good news — you're a fit.</h2>
+        <p class="sub" id="slotsBody"></p>
+        <div class="slot-note" id="slotNote" style="display:none"></div>
+        <div class="slot-grid" id="slotGrid"></div>
+        <a class="wa-continue" id="waSlots" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.978-1.197zm5.392-15.62z"/></svg>
+          Prefer to text? Continue on WhatsApp
+        </a>
+        <div class="err" id="bookErr"></div>
+      </div>
+
+      <!-- RESULT -->
+      <div class="result" id="resultBox">
+        <div class="crest" id="crest">✓</div>
+        <h2 id="resTitle"></h2>
+        <p class="sub" id="resBody"></p>
+        <div class="slot" id="resSlot" style="display:none"></div>
+        <div class="sms" id="resSms"><span class="tag">📱 Text sent to your phone</span><span id="smsText"></span></div>
+        <a class="wa-continue" id="waResult" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.978-1.197zm5.392-15.62z"/></svg>
+          Continue on WhatsApp
+        </a>
+        <button class="again" id="againBtn">Submit another lead</button>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<script>
+  // ====== CONFIG ======
+  // Production (recommended — activate workflow first):
+  const WEBHOOK_URL = "https://josesn8n.win/webhook/re-intake";
+  // For test mode instead, use:  https://josesn8n.win/webhook-test/re-intake
+  //   and click "Execute workflow" in n8n before each submit.
+
+  // Twilio WhatsApp sandbox / firm WhatsApp sender (digits only). The conversation continues
+  // here: the funnel already seeded the bot with this lead's intake form, so the bot's first
+  // reply is personalized. (Twilio SANDBOX: the lead must first send the join code to this number.)
+  const WHATSAPP_NUMBER = "17372583742";
+  function waLink(firstName){
+    const hi = firstName ? ("Hi, this is " + firstName + " — ") : "Hi — ";
+    const msg = hi + "I just submitted my home inquiry and want to finish booking my consult.";
+    return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(msg);
+  }
+  function firstNameOf(lead){ return ((lead && lead.name) || "").trim().split(/\s+/)[0] || ""; }
+
+  const form    = document.getElementById('leadForm');
+  const btn      = document.getElementById('submitBtn');
+  const btnLabel = btn.querySelector('.btn-label');
+  const formLive = document.querySelector('.form-live');
+  const resultBox= document.getElementById('resultBox');
+  const errBox   = document.getElementById('errBox');
+  const slotsView= document.getElementById('slotsView');
+  const slotGrid = document.getElementById('slotGrid');
+  const slotNote = document.getElementById('slotNote');
+  const bookErr  = document.getElementById('bookErr');
+  let lastLead = null;
+  let lastPreferredDate = "";
+  try { document.getElementById('prefdate').min = new Date().toISOString().slice(0,10); } catch(_) {}
+
+  // Normalize whatever the user types into clean E.164 (defaults to US +1)
+  function toE164(raw){
+    let s = (raw || '').trim();
+    if (s.startsWith('+')) return '+' + s.slice(1).replace(/\D/g,'');
+    const d = s.replace(/\D/g,'');
+    if (d.length === 10) return '+1' + d;          // 9012890064 -> +19012890064
+    if (d.length === 11 && d[0] === '1') return '+' + d;
+    return '+' + d;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errBox.classList.remove('show');
+
+    if (!form.checkValidity()){ form.reportValidity(); return; }
+
+    lastLead = {
+      name: document.getElementById('name').value.trim(),
+      phone: toE164(document.getElementById('phone').value),
+      email: document.getElementById('email').value.trim(),
+      inquiry_description: document.getElementById('inquiry').value.trim(),
+      source: "Landing Page"
+    };
+    lastPreferredDate = document.getElementById('prefdate').value || "";
+
+    // loading state
+    btn.disabled = true;
+    btnLabel.textContent = "Reviewing your details";
+    btn.insertAdjacentHTML('beforeend', '<span class="spin"></span>');
+
+    try{
+      const data = await postIntake({ ...lastLead, action: "qualify", preferred_date: lastPreferredDate });
+      if (data && data.qualified === true && Array.isArray(data.slots)) renderSlots(data);
+      else renderResult(data);
+    } catch(err){
+      console.error('[intake] qualify failed:', err);
+      errBox.innerHTML = "We couldn't reach the intake system. If this is the demo, make sure the workflow is <b>Active</b> and the Webhook node's <b>Allowed Origins (CORS)</b> is set to <code>*</code>.";
+      errBox.classList.add('show');
+      resetBtn();
+    }
+  });
+
+  async function postIntake(payload){
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // SMS mode: the funnel business-initiates the first text itself (no silent flag), so the lead
+      // is contacted the moment they submit. Replies flow to the bot webhook (point the SMS number's
+      // inbound webhook at /webhook/re-inbound).
+      body: JSON.stringify(payload)
+    });
+    let data = {};
+    try { data = await res.json(); } catch(_) { /* empty body */ }
+    if (!res.ok) throw new Error('Server returned ' + res.status);
+    return data;
+  }
+
+  function renderResult(data){
+    // 3-way verdict: qualified / needs_info / declined (falls back gracefully)
+    const verdict = (data && data.verdict)
+      || ((data && data.qualified === true) ? 'qualified' : 'needs_info');
+    const qualified = verdict === 'qualified';
+    const sms  = (data && data.sms_reply) || "Thanks! We've received your information and a member of our team will be in touch shortly.";
+    const slot = data && data.consult_slot;
+
+    const cls = qualified ? 'qualified' : (verdict === 'declined' ? 'declined' : 'pending');
+    resultBox.classList.remove('qualified','pending','declined');
+    resultBox.classList.add(cls);
+    document.getElementById('crest').textContent =
+      qualified ? '✓' : (verdict === 'declined' ? '✕' : '⏳');
+
+    const titles = {
+      qualified: "Good news — you're a great fit.",
+      needs_info: "Thanks — we've got your details.",
+      declined: "Thanks for reaching out."
+    };
+    const bodies = {
+      qualified: "We've reserved a free consultation with one of our agents. The details are on their way to your phone right now.",
+      needs_info: "Our intake team has your information. Watch your phone for a quick text — we may just need one more detail.",
+      declined: "Based on what you shared, this may not be something our team can help with. We've sent a quick note to your phone — thank you for reaching out."
+    };
+    document.getElementById('resTitle').textContent = titles[verdict] || titles.needs_info;
+    document.getElementById('resBody').textContent  = bodies[verdict] || bodies.needs_info;
+
+    const slotEl = document.getElementById('resSlot');
+    if (qualified && slot){
+      slotEl.style.display = 'block';
+      slotEl.textContent = "📅 Consultation booked: " + slot;
+    } else {
+      slotEl.style.display = 'none';
+    }
+
+    document.getElementById('smsText').textContent = sms;
+
+    // Offer to continue the (now personalized) conversation on WhatsApp — except when declined.
+    const waR = document.getElementById('waResult');
+    if (waR){
+      waR.href = waLink(firstNameOf(lastLead));
+      waR.classList.toggle('show', verdict !== 'declined');
+    }
+
+    formLive.classList.add('hide');
+    resultBox.classList.add('show');
+  }
+
+  // ====== STEP 2: render open slots, then book the chosen one ======
+  function renderSlots(data){
+    const slots = (data && data.slots) || [];
+    document.getElementById('slotsBody').textContent =
+      (data && data.sms_reply) || "Good news — you're a fit! Pick a time below to lock in your free consult.";
+    bookErr.classList.remove('show');
+    slotNote.style.display = 'none';
+    slotGrid.innerHTML = '';
+    if (!slots.length){
+      slotNote.style.display = 'block';
+      slotNote.textContent = "No open times in the next couple of weeks — our team will reach out to find one.";
+    }
+    slots.forEach((s) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'slot-opt';
+      b.textContent = s.label;
+      b.addEventListener('click', () => bookSlot(s.iso));
+      slotGrid.appendChild(b);
+    });
+    const waS = document.getElementById('waSlots');
+    if (waS){ waS.href = waLink(firstNameOf(lastLead)); waS.classList.add('show'); }
+
+    formLive.classList.add('hide');
+    resetBtn();
+    slotsView.classList.add('show');
+  }
+
+  async function bookSlot(iso){
+    bookErr.classList.remove('show');
+    const opts = [...slotGrid.querySelectorAll('.slot-opt')];
+    opts.forEach(b => b.disabled = true);
+    try{
+      const data = await postIntake({ ...lastLead, action: "book", chosen_slot: iso });
+      if (data && data.booked === true){
+        renderBooked(data);
+      } else {
+        // slot was just taken — pull fresh availability and re-render
+        const fresh = await postIntake({ ...lastLead, action: "qualify", preferred_date: lastPreferredDate });
+        renderSlots(fresh);
+        slotNote.style.display = 'block';
+        slotNote.textContent = (data && data.message) || "That time was just booked — here are fresh openings.";
+      }
+    } catch(err){
+      console.error('[intake] book failed:', err);
+      bookErr.innerHTML = "We couldn't book that time. Please try another.";
+      bookErr.classList.add('show');
+      opts.forEach(b => b.disabled = false);
+    }
+  }
+
+  function renderBooked(data){
+    resultBox.classList.remove('qualified','pending','declined');
+    resultBox.classList.add('qualified');
+    document.getElementById('crest').textContent = '✓';
+    document.getElementById('resTitle').textContent = "You're booked!";
+    document.getElementById('resBody').textContent =
+      "Your free consultation is confirmed. The details are on their way to your phone now.";
+    const slotEl = document.getElementById('resSlot');
+    if (data && data.consult_slot){
+      slotEl.style.display = 'block';
+      slotEl.textContent = "📅 Consultation booked: " + data.consult_slot;
+    } else {
+      slotEl.style.display = 'none';
+    }
+    document.getElementById('smsText').textContent =
+      (data && data.sms_reply) || "Thanks! Your consult is confirmed.";
+    slotsView.classList.remove('show');
+    formLive.classList.add('hide');
+    resultBox.classList.add('show');
+  }
+
+  // ====== DEMO AUTOFILL (sales-call props; safe to delete for a real client) ======
+  function demoDate(offset){
+    const d = new Date(); d.setDate(d.getDate() + offset);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1); // next weekday
+    return d.toISOString().slice(0,10);
+  }
+  const DEMOS = {
+    qualified: {
+      name: "Maria Gomez", phone: "(555) 010-2244", email: "maria@example.com",
+      inquiry_description: "We're pre-approved and looking for a 3 bedroom house in Riverside under $450,000. Our lender issued the letter last week. We're hoping to move within 3 months and aren't working with an agent yet."
+    },
+    needs: {
+      name: "Dave Miller", phone: "(555) 010-7788", email: "dave@example.com",
+      inquiry_description: "Thinking about selling my house sometime."
+    },
+    declined: {
+      name: "Tom Reed", phone: "(555) 010-3311", email: "tom@example.com",
+      inquiry_description: "I'm a photographer and I'd love to shoot your listings. Great rates for realtors!"
+    }
+  };
+  document.querySelectorAll('.demo-btn').forEach((b) => {
+    b.addEventListener('click', () => {
+      const d = DEMOS[b.dataset.demo];
+      if (!d) return;
+      document.getElementById('name').value = d.name;
+      document.getElementById('phone').value = d.phone;
+      document.getElementById('email').value = d.email;
+      document.getElementById('inquiry').value = d.inquiry_description;
+      document.getElementById('prefdate').value = demoDate(2);
+      document.getElementById('inquiry').focus();
+    });
+  });
+
+  function resetBtn(){
+    btn.disabled = false;
+    const s = btn.querySelector('.spin'); if (s) s.remove();
+    btnLabel.textContent = "Get my free consult";
+  }
+
+  document.getElementById('againBtn').addEventListener('click', () => {
+    resultBox.classList.remove('show');
+    slotsView.classList.remove('show');
+    bookErr.classList.remove('show');
+    document.querySelectorAll('.wa-continue').forEach(el => el.classList.remove('show'));
+    slotNote.style.display = 'none';
+    formLive.classList.remove('hide');
+    form.reset();
+    resetBtn();
+  });
+</script>
+</body>
+</html>

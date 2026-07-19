@@ -60,6 +60,15 @@ then have the user re-import. Config field tokens flow as `{{TOKEN}}` in templat
 `build_workflow.py`. Both workflows must be **Active** in n8n (static data + agent memory only
 persist on active production runs — *not* the canvas "Execute" button).
 
+### Twilio/WhatsApp hard constraint
+
+**Business-initiated WhatsApp messages REQUIRE an approved template (ContentSid).** Free-form
+business-initiated sends fail with Twilio error 21654 / HTTP 400 — this burned multiple debugging
+sessions before the root cause was found. The current architecture designs around it: the inbound
+bot replies via TwiML inside the user-initiated session (24-hour window), and the funnel's outbound
+text goes to a lead who just submitted the form. Keep any new outbound path template-based or
+user-initiated; never add a free-form business-initiated send.
+
 ### Compliance (non-negotiable)
 
 Every AI system prompt (funnel `Set: AI Config` node and the bot's agent message) must **qualify
@@ -88,6 +97,11 @@ There is no test suite. Verify with these (in order of cost):
 
 Note: the claude.ai **n8n MCP integration points at a different n8n instance** (not `josesn8n.win`),
 so it cannot inspect these workflows — `curl` is the verification path.
+
+**Never declare a workflow fix "done" on build output alone.** Verify against the live webhook
+(step 2 above) before claiming success; if live verification isn't possible in-session, say
+explicitly what remains unverified and how to verify it. Past sessions ended "mostly achieved"
+with residual live bugs (e.g. a Twilio send still 400ing) because this step was skipped.
 
 ## Lead generation & outreach collateral (`outputs/`, `uploads/`)
 
